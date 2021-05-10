@@ -1,0 +1,9 @@
+Package: moe.misty.fouldecrypt
+Name: fouldecrypt
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: An awesome tool of some sort!!
+Maintainer: misty
+Author: misty
+Section: System
+Tag: role::hacker
