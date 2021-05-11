@@ -1,5 +1,7 @@
 # FoulDecrypt
 
+It's available in my Cydia repo: http://repo.misty.moe
+
 FlexDecrypt's source code is pretty FAT, bundling the whole swift runtime to just achieve a simple mremap_encrypted.
 
 And at the same time, foulplay independently found the same approach, and implemented it in a much more simple way.
