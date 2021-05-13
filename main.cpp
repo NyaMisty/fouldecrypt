@@ -130,6 +130,9 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
 
     DLOG("Going to decrypt crypt page: off 0x%x size 0x%x cryptid %d", info->cryptoff, info->cryptsize, info->cryptid);
 
+    int cryptoff = info->cryptoff;
+    int cryptsize = info->cryptsize;
+
     size_t off_aligned = info->cryptoff & ~(PAGE_SIZE - 1);
     size_t size_aligned = (info->cryptsize & ~(PAGE_SIZE - 1)) + PAGE_SIZE;
     //size_t size_aligned = info->cryptsize + info->cryptoff - off_aligned;
@@ -139,6 +142,8 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
     
     void *tmp_read = malloc(size_aligned);
     memcpy(tmp_read, tmp_map, size_aligned);
+    
+    void *tmpshare = __mmap("share region for fork", NULL, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, 0, 0);
 
     void *oribase = NULL;
     if (!(info->cryptoff & (PAGE_SIZE - 1))) {
@@ -147,44 +152,81 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
         oribase = __mmap("16k-aligned", NULL, size_aligned, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
     } else {
         DLOG("Not 16k aligned, trying to do the hack :O");
+        int fpid = fork();
+        
+        if (fpid == 0) {
+            if (!!init_kerninfra()) {
+                fprintf(stderr, "Failed to init kerninfra!!\n");
+                exit(1);
+            } else {
+                DLOG("successfully initialized kerninfra!");
+            }
 
-        if (!!init_kerninfra()) {
-            fprintf(stderr, "Failed to init kerninfra!!\n");
-            exit(1);
+            /*oribase = mmap(NULL, size_aligned, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+            if (oribase == MAP_FAILED) {
+                perror("mmap_pre(unprotect)");
+                return 1;
+            }*/
+
+            // now map the 4K-aligned enc pages, like the good old days
+            DLOG("mapping encrypted data pages using off: 0x%x, size: 0x%x", cryptoff, cryptsize);
+            //oribase = mmap(NULL, 0x900, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, 0x5000);
+            //oribase = mmap(oribase, size_aligned + off_aligned - map_offset, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_FIXED, f, map_offset);
+            //oribase = __mmap("4k-aligned mmap", NULL, info->cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
+            
+            // DEBUG test no offset
+            oribase = __mmap("4k-aligned mmap", NULL, size_aligned, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, off_aligned);
+
+            *(void **)tmpshare = oribase;
+
+            // patching kernel task map to allow 4K page (MAGIC)
+            auto curp = proc_t_p(current_proc());
+            auto vPageShift = curp.task()._map().page_shift();
+            DLOG("original page shift: %d", vPageShift.load());
+            vPageShift.store(12);
+            DLOG("new page shift: %d", vPageShift.load());
+
+
+            while (true) {
+                usleep(100000);
+            }
+            
+            // restore kernel task map to 16K page, or it will panic because encrypting compressor's paging
+            vPageShift.store(14);
+            DLOG("restored page shift: %d", vPageShift.load());
+            
+            if (oribase == MAP_FAILED) {
+                //perror("mmap(unprotect)");
+                return 1;
+            }
+            exit(0);
         } else {
-            DLOG("successfully initialized kerninfra!");
+            usleep(1000000);
+
+            kern_return_t kr;
+            mach_port_t port = MACH_PORT_NULL;
+            kr = task_for_pid(mach_task_self(), fpid, &port);
+            if (kr != KERN_SUCCESS) {
+                DLOG("error tfp fork child! kr: %d", kr);
+                exit(1);
+            }
+            void *tmptarget = __mmap("remap target", NULL, cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+            uint64_t child_addr = *(uint64_t *)tmpshare;
+            child_addr += map_offset;
+            mach_vm_address_t dest_page_address_ = (mach_vm_address_t)tmptarget;
+            vm_prot_t         curr_protection, max_protection;
+            DLOG("remapping from child's %p to our's %p", (void *)child_addr, tmptarget);
+            kr = mach_vm_remap(mach_task_self(), &dest_page_address_, cryptsize, 0, VM_FLAGS_OVERWRITE | VM_FLAGS_FIXED, port,
+                                    (mach_vm_address_t)child_addr, TRUE, &curr_protection, &max_protection, VM_INHERIT_COPY);
+            if (kr != KERN_SUCCESS) {
+                DLOG("error remapping page! kr: %d", kr);
+                exit(1);
+            }
+            
+            oribase = tmptarget;
         }
 
-        /*oribase = mmap(NULL, size_aligned, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
-        if (oribase == MAP_FAILED) {
-            perror("mmap_pre(unprotect)");
-            return 1;
-        }*/
-
-        // patching kernel task map to allow 4K page (MAGIC)
-        auto curp = proc_t_p(current_proc());
-        auto vPageShift = curp.task()._map().page_shift();
-        DLOG("original page shift: %d", vPageShift.load());
-        vPageShift.store(12);
-        DLOG("new page shift: %d", vPageShift.load());
-
-        // now map the 4K-aligned enc pages, like the good old days
-        DLOG("mapping encrypted data pages using off: 0x%x, size: 0x%x", info->cryptoff, info->cryptsize);
-        //oribase = mmap(NULL, 0x900, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, 0x5000);
-        //oribase = mmap(oribase, size_aligned + off_aligned - map_offset, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_FIXED, f, map_offset);
-        //oribase = __mmap("4k-aligned mmap", NULL, info->cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
         
-        // DEBUG test no offset
-        oribase = __mmap("4k-aligned mmap", NULL, size_aligned, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
-        
-        // restore kernel task map to 16K page, or it will panic because encrypting compressor's paging
-        vPageShift.store(14);
-        DLOG("restored page shift: %d", vPageShift.load());
-        
-        if (oribase == MAP_FAILED) {
-            //perror("mmap(unprotect)");
-            return 1;
-        }
 
         //exit(111);
         /*if (kr != KERN_SUCCESS) {
@@ -207,11 +249,6 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
         perror("mprotect");
         return 1;
     }*/
-
-    /*mach_vm_address_t dest_page_address_ = (mach_vm_address_t)oribase;
-        vm_prot_t         curr_protection, max_protection;
-    kern_return_t kr = mach_vm_remap(mach_task_self(), &dest_page_address_, page_size, 0, VM_FLAGS_OVERWRITE | VM_FLAGS_FIXED, mach_task_self(),
-                            (mach_vm_address_t)remap_page, TRUE, &curr_protection, &max_protection, VM_INHERIT_COPY);*/
         
     
     // old-school mremap_encrypted
