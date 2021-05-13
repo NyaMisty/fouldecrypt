@@ -140,6 +140,14 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
     void *tmp_read = malloc(size_aligned);
     memcpy(tmp_read, tmp_map, size_aligned);
 
+    auto vp = vnode_t_p(vnode_from_fd(f));
+    assert(vp.v_type().load() == 1); // == VREG
+    
+    auto ubcinfo = ubc_info_p(vp.v_un().load());
+    auto vCSBlob = ubcinfo.cs_blobs();
+    auto oriBlob = vCSBlob.load_ori();
+    DLOG("original CSBlob: %p", (void *)oriBlob);
+
     void *oribase = NULL;
     if (!(info->cryptoff & (PAGE_SIZE - 1))) {
         // already 16k aligned, pretty good!
@@ -168,16 +176,26 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
         vPageShift.store(12);
         DLOG("new page shift: %d", vPageShift.load());
 
+        vCSBlob.store(0);
         // now map the 4K-aligned enc pages, like the good old days
         DLOG("mapping encrypted data pages using off: 0x%x, size: 0x%x", info->cryptoff, info->cryptsize);
         //oribase = mmap(NULL, 0x900, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, 0x5000);
         //oribase = mmap(oribase, size_aligned + off_aligned - map_offset, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_FIXED, f, map_offset);
         //oribase = __mmap("4k-aligned mmap", NULL, info->cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
         
-        // DEBUG test no offset
-        oribase = __mmap("4k-aligned mmap", NULL, size_aligned, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
+
+        // void *oribase_aligned = __mmap("16k-aligned mmap hole", NULL, size_aligned, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, off_aligned);
+        // oribase = __mmap("4k-aligned mmap", oribase_aligned, info->cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_FIXED, f, info->cryptoff);
+        /*auto vPmap = curp.task()._map().pmap();
+        auto oriPmap = vPmap.load();
+        DLOG("original pmap: %p", (void *)oriPmap);
+        vPmap.store(0);*/
+        
+        oribase = __mmap("4k-aligned mmap", NULL, info->cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
+
         
         // restore kernel task map to 16K page, or it will panic because encrypting compressor's paging
+        //vPmap.store(oriPmap);
         vPageShift.store(14);
         DLOG("restored page shift: %d", vPageShift.load());
         
@@ -219,6 +237,8 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
     DLOG("mremap_encrypted pages using addr: %p, size: 0x%x, cryptid: %d, cputype: %x, cpusubtype: %x", 
         base, info->cryptsize, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
     int error = __mremap_encrypted("unprotect", base, info->cryptsize, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
+    vCSBlob.store(oriBlob);
+
     if (error) {
         //perror("mremap_encrypted(unprotect)");
         munmap(oribase, info->cryptsize);
