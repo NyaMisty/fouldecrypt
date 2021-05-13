@@ -3,17 +3,22 @@ ARCHS = arm64 arm64e
 
 include $(THEOS)/makefiles/common.mk
 
-TOOL_NAME = fouldecrypt flexdecrypt2
+TOOL_NAME = fouldecrypt flexdecrypt2 testdec
 
-fouldecrypt_FILES = main.m
+fouldecrypt_FILES = main.cpp
 fouldecrypt_CFLAGS = -fobjc-arc # -Ipriv_include
 fouldecrypt_CODESIGN_FLAGS = -Sentitlements.plist
 fouldecrypt_INSTALL_PATH = /usr/local/bin
+#fouldecrypt_SUBPROJECTS = kerninfra
+#fouldecrypt_LDFLAGS += -Lkerninfra/libs
+#fouldecrypt_CCFLAGS += -std=c++2a
 
-flexdecrypt2_FILES = flexwrapper.m
+flexdecrypt2_FILES = flexwrapper.mm
 flexdecrypt2_CFLAGS = -fobjc-arc # -Ipriv_include
 flexdecrypt2_CODESIGN_FLAGS = -Sentitlements.plist
 flexdecrypt2_INSTALL_PATH = /usr/local/bin
-
+flexdecrypt2_SUBPROJECTS = kerninfra
+flexdecrypt2_LDFLAGS += -Lkerninfra/libs
+flexdecrypt2_CCFLAGS += -std=c++2a
 
 include $(THEOS_MAKE_PATH)/tool.mk

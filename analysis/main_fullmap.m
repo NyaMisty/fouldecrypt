@@ -22,7 +22,7 @@
 
 #define MAP_HUGETLB 0x40000
 
-extern int mremap_encrypted(void*, size_t, uint32_t, uint32_t, uint32_t);
+extern "C" int mremap_encrypted(void*, size_t, uint32_t, uint32_t, uint32_t);
 
 static int
 unprotect(vm_address_t cryptaddr, struct encryption_info_command_64 *info)
