@@ -5,7 +5,7 @@ include $(THEOS)/makefiles/common.mk
 
 TOOL_NAME = fouldecrypt flexdecrypt2
 
-fouldecrypt_FILES = main.cpp
+fouldecrypt_FILES = main.cpp foulmain.cpp
 fouldecrypt_CFLAGS = -fobjc-arc -Wno-unused-variable # -Ipriv_include
 fouldecrypt_CCFLAGS = $(fouldecrypt_CFLAGS)
 fouldecrypt_CODESIGN_FLAGS = -Sentitlements.plist
@@ -14,7 +14,7 @@ fouldecrypt_SUBPROJECTS = kerninfra
 fouldecrypt_LDFLAGS += -Lkerninfra/libs
 fouldecrypt_CCFLAGS += -std=c++2a
 
-flexdecrypt2_FILES = flexwrapper.mm
+flexdecrypt2_FILES = main.cpp flexwrapper.mm
 flexdecrypt2_CFLAGS = -fobjc-arc -Wno-unused-variable # -Ipriv_include
 flexdecrypt2_CCFLAGS = $(flexdecrypt2_CFLAGS)
 flexdecrypt2_CODESIGN_FLAGS = -Sentitlements.plist

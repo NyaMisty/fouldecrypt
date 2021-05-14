@@ -149,7 +149,7 @@ int swap_csblob(int f, std::function<int()> cb) {
     
     auto ubcinfo = ubc_info_p(vp.v_un().load());
     auto vCSBlob = ubcinfo.cs_blobs();
-    auto oriBlob = vCSBlob.load_ori();
+    auto oriBlob = vCSBlob.load();
     DLOG("original CSBlob: %p", (void *)oriBlob);
 
     vCSBlob.store(0);
@@ -157,9 +157,162 @@ int swap_csblob(int f, std::function<int()> cb) {
     int ret = cb();
 
     vCSBlob.store(oriBlob);
-    DLOG("restored CSBlob: %p", (void *)vCSBlob.load_ori());
+    DLOG("restored CSBlob: %p", (void *)vCSBlob.load());
 
     return ret;
+}
+
+// static int
+// unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
+// {
+//     assert((info->cryptoff & (EXEC_PAGE_SIZE - 1)) == 0);
+
+//     DLOG("Going to decrypt crypt page: off 0x%x size 0x%x cryptid %d", info->cryptoff, info->cryptsize, info->cryptid);
+
+//     size_t off_aligned = info->cryptoff & ~(PAGE_SIZE - 1);
+//     size_t size_aligned = (info->cryptsize & ~(PAGE_SIZE - 1)) + PAGE_SIZE;
+//     //size_t size_aligned = info->cryptsize + info->cryptoff - off_aligned;
+//     size_t map_offset = info->cryptoff - off_aligned;
+    
+//     void *cryptbase = NULL; size_t cryptlen = 0; 
+//     void *realcryptbase = NULL;
+//     int err = 0;
+
+//     if (!(info->cryptoff & (PAGE_SIZE - 1))) {
+//         // already 16k aligned, pretty good!
+//         DLOG("Already 16k aligned, directly go ahead :)");
+//         cryptbase = __mmap("16k-aligned", NULL, size_aligned, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
+//         cryptlen = info->cryptsize;
+//         realcryptbase = cryptbase;
+//         // old-school mremap_encrypted
+//         err = __mremap_encrypted("unprotect", cryptbase, info->cryptsize, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
+
+//     } else {
+//         DLOG("Not 16k aligned, trying to do the hack :O");
+
+//         if (!!init_kerninfra()) {
+//             fprintf(stderr, "Failed to init kerninfra!!\n");
+//             exit(1);
+//         } else {
+//             DLOG("successfully initialized kerninfra!");
+//         }
+        
+// #define DISABLE_FUN(is_disable, fun, stub) (!is_disable ? (fun) : std::function<decltype(fun)>(stub))
+
+//         if (DISABLE_FUN(true, swap_csblob, [&](int, std::function<int()> cb)->int{return cb();})(f, [&]() -> int 
+//         {
+//             // void *haystack = __mmap("pre 16k-aligned mmap", NULL, size_aligned, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, off_aligned);
+//             // void *haystacktmp = malloc(size_aligned);
+//             // memmove(haystacktmp, haystack, size_aligned);
+
+//             // // 16k then patch vme off
+//             cryptbase = __mmap("directly 16k-aligned mmap", NULL, map_offset + size_aligned, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, off_aligned);
+//             cryptlen = map_offset + info->cryptsize;
+//             realcryptbase = (char *)cryptbase + map_offset;
+
+//             // auto curp = proc_t_p(current_proc());
+//             // addr_t _encVmEntry = lookup_vm_map_entry(curp.task()._map().load(), (addr_t)cryptbase);
+//             // auto encVmEntry = _vm_map_entry_p(_encVmEntry);
+//             // DLOG("mmaped vme_offset: 0x%llx", encVmEntry.vme_offset().load());
+//             // uint32_t oriFlags = encVmEntry.vme_flags().load();
+//             // DLOG("mmaped vme_flags: 0x%x", oriFlags);
+
+//             // encVmEntry.vme_flags().store(oriFlags & ~0x80000u);
+//             // encVmEntry.vme_offset().store(info->cryptoff);
+//             // DLOG("patched vme with flag %x, offset %llx", encVmEntry.vme_flags().load(), encVmEntry.vme_offset().load());
+//             // realcryptbase = cryptbase;
+//             // cryptlen = info->cryptsize;
+
+//             void *tmp = malloc(cryptlen);
+
+//             if (DISABLE_FUN(false, swap_pageshift, [&](std::function<int()> cb)->int{return cb();})([&]() -> int 
+//             {
+//                 // now map the 4K-aligned enc pages, like the good old days
+//                 //DLOG("mapping encrypted data pages using off: 0x%x, size: 0x%x", info->cryptoff, info->cryptsize);
+                
+//                 // cryptbase = __mmap("4k-aligned mmap", NULL, size_aligned, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
+//                 // cryptlen = info->cryptsize;
+//                 // realcryptbase = (char *)cryptbase;
+                
+//                 // cryptbase = __mmap("4k-aligned mmap", NULL, info->cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
+//                 // cryptlen = info->cryptsize;
+//                 // realcryptbase = (char *)cryptbase;
+
+//                 cryptbase = __mmap("4k-aligned mmap", NULL, 0x4000, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, 0x1000);
+//                 cryptlen = info->cryptsize;
+//                 realcryptbase = (char *)cryptbase;
+
+//                 //memmove(tmp, cryptbase, cryptlen);    
+
+//                 if (cryptbase == MAP_FAILED) {
+//                     return 1;
+//                 }
+
+//                 /*oribase = __mmap("re-mmap 4k aligned", oribase, size_aligned - map_offset, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_FIXED, f, info->cryptoff);
+//                 if (oribase == MAP_FAILED) {
+//                     return 1;
+//                 }*/
+
+//                 //err = __mremap_encrypted("unprotect", cryptbase, cryptlen, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
+//                 //err = __mremap_encrypted("unprotect", realcryptbase, size_aligned, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
+//                 getchar();
+//                 //memmove(tmp, realcryptbase, info->cryptsize);
+//                 return 0;
+//             }
+//             )) return 1;
+
+//             /**/
+//             //return 1;
+                
+
+//             return 0;
+//         }
+//         )) return 1;
+//     }
+
+//     char test[0x1000] = {0};
+//     memmove(test, cryptbase, 0x1000);
+
+//     getchar();
+
+//     if (err) {
+//         //perror("mremap_encrypted(unprotect)");
+//         //munmap(cryptbase, cryptlen);
+//         return 1;
+//     }
+
+//     DLOG("copying enc pages, size: 0x%x..", info->cryptsize);
+//     memcpy(dupe + info->cryptoff, realcryptbase, info->cryptsize);
+
+//     DLOG("cleaning up...");
+//     //munmap(cryptbase, cryptlen);
+
+//     return 0;
+// }
+
+void debugprint_vme(addr_t _vmentry) {
+    auto encVmEntry = _vm_map_entry_p(_vmentry);
+    DLOG("mmaped entry: %p - %p", (void *)encVmEntry.start().load(), (void *)encVmEntry.end().load());
+    DLOG("mmaped vme_offset: 0x%llx", encVmEntry.vme_offset().load());
+    DLOG("mmaped vme_flags: 0x%x", encVmEntry.vme_flags().load());
+    DLOG("mmaped vme_object: 0x%llx", encVmEntry.vme_object().load());
+}
+
+void debugprint_vmobj(addr_t _vmobj) {
+    auto vmobj = vm_object_t_p(_vmobj);
+    DLOG("mmaped vmobj *shadow: %p **shadow: %p", (void *)vmobj.shadow().load_addr(), (void *)vmobj.shadow().shadow().load_addr());
+    DLOG("mmaped vmobj pager: %p shadow pager: %p", (void *)vmobj.pager().load_addr(), (void *)vmobj.shadow().pager().load_addr());
+    DLOG("mmaped vmobj shadow pager op: %p", (void *)vmobj.shadow().pager().mo_pager_ops().load_addr());
+}
+
+void debugprint_pager(addr_t _pager) {
+    auto applePager = apple_protect_pager_t_p(_pager);
+    DLOG("mmaped vme_object apple protect pager: ", NULL)
+    DLOG("    backingOff %llx",  applePager.backing_offset().load())
+    DLOG("    cryptoBackingOff %llx", applePager.crypto_backing_offset().load())
+    DLOG("    cryptoStart %llx", applePager.crypto_start().load())
+    DLOG("    cryptoEnd %llx", applePager.crypto_end().load())
+    DLOG("    cryptInfo %p", (void *)applePager.crypt_info().load())
 }
 
 static int
@@ -170,20 +323,23 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
     DLOG("Going to decrypt crypt page: off 0x%x size 0x%x cryptid %d", info->cryptoff, info->cryptsize, info->cryptid);
 
     size_t off_aligned = info->cryptoff & ~(PAGE_SIZE - 1);
-    size_t size_aligned = (info->cryptsize & ~(PAGE_SIZE - 1)) + PAGE_SIZE;
     //size_t size_aligned = info->cryptsize + info->cryptoff - off_aligned;
-    size_t map_offset = info->cryptoff - off_aligned;
+    size_t map_padding = info->cryptoff - off_aligned;
     
-    void *oribase = NULL; int err = 0;
+    int err = 0;
+    void *decryptedBuf = malloc(info->cryptsize);
+
     if (!(info->cryptoff & (PAGE_SIZE - 1))) {
         // already 16k aligned, pretty good!
         DLOG("Already 16k aligned, directly go ahead :)");
-        oribase = __mmap("16k-aligned", NULL, size_aligned, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
+        void *cryptbase = __mmap("16k-aligned", NULL, info->cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
         // old-school mremap_encrypted
-        DLOG("mremap_encrypted pages using addr: %p, size: 0x%x, cryptid: %d, cputype: %x, cpusubtype: %x", 
-            oribase, info->cryptsize, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
-        err = __mremap_encrypted("unprotect", oribase, info->cryptsize, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
-
+        if (__mremap_encrypted("unprotect", cryptbase, info->cryptsize, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL)) {
+            munmap(cryptbase, info->cryptsize);
+            return 1;
+        }
+        memmove(decryptedBuf, cryptbase, info->cryptsize);
+        munmap(cryptbase, info->cryptsize);
     } else {
         DLOG("Not 16k aligned, trying to do the hack :O");
 
@@ -193,54 +349,53 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
         } else {
             DLOG("successfully initialized kerninfra!");
         }
-        
-        if (swap_csblob(f, [&]() -> int {
-            if (swap_pageshift([&]() -> int {
-                // now map the 4K-aligned enc pages, like the good old days
-                DLOG("mapping encrypted data pages using off: 0x%x, size: 0x%x", info->cryptoff, info->cryptsize);
-                
-                //oribase = __mmap("4k-aligned mmap", NULL, size_aligned, PROT_READ | PROT_EXEC, MAP_SHARED, f, info->cryptoff);
-                void *oribase_aligned = __mmap("directly 16k-aligned mmap", NULL, size_aligned, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, off_aligned);
-                if (oribase == MAP_FAILED) {
-                    return 1;
-                }
 
-                /*auto curp = proc_t_p(current_proc());
-                addr_t _encVmEntry = lookup_vm_map_entry(curp.task()._map().load(), (addr_t)oribase);
-                auto encVmEntry = _vm_map_entry_p(_encVmEntry);
-                DLOG("mmaped vme_offset: 0x%llx", encVmEntry.vme_offset().load())
-                
-                encVmEntry.vme_offset().store(info->cryptoff);
-                oribase = __mmap("re-mmap 4k aligned", oribase, size_aligned - map_offset, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_FIXED, f, info->cryptoff);
-                if (oribase == MAP_FAILED) {
-                    return 1;
-                }*/
-                oribase = (char *)oribase_aligned + map_offset;
-                return 0;
-            })) return 1;
-            DLOG("mremap_encrypted pages using addr: %p, size: 0x%x, cryptid: %d, cputype: %x, cpusubtype: %x", 
-            oribase, info->cryptsize, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
-            err = __mremap_encrypted("unprotect", (void *)((addr_t)oribase & ~0x3fff), info->cryptsize, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
+        for (size_t off = off_aligned; off < info->cryptoff + info->cryptsize; off += PAGE_SIZE) {
+            size_t off_end = MIN(off + PAGE_SIZE, info->cryptoff + info->cryptsize);
+            size_t curMapLen = (off - off_end) & (PAGE_SIZE - 1); if (!curMapLen) curMapLen = PAGE_SIZE;
+            char *cryptbase = (char *)__mmap("directly 16k-aligned mmap", NULL, curMapLen, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, off);
+            size_t inPageStart = off < info->cryptoff ? info->cryptoff - off : 0;
+            size_t inPageEnd = curMapLen;
+            size_t cryptOff = off + inPageStart;
+
+            if (__mremap_encrypted("unprotect", cryptbase, curMapLen, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL)) {
+                munmap(cryptbase, curMapLen);
+                return 1;
+            }
+
+            auto curp = proc_t_p(current_proc());
+            addr_t _encVmEntry = lookup_vm_map_entry(curp.task()._map().load_addr(), (addr_t)(cryptbase));
+            DLOG("Got mmaped entry: %p", (void*)_encVmEntry);
+            debugprint_vme(_encVmEntry);
+
+            auto encVmEntry = _vm_map_entry_p(_encVmEntry);
+            auto vmobj = encVmEntry.vme_object();
+            debugprint_vmobj(vmobj.load_addr());
+            auto applePager = apple_protect_pager_t_p(vmobj.shadow().pager().load_addr());
+            DLOG("mmaped vme_object apple protect pager: ", NULL);
+            debugprint_pager(applePager.addr());
+
+            applePager.crypto_backing_offset().store(cryptOff);
+            applePager.crypto_start().store(inPageStart);
+
+            DLOG("patched mmaped vme_object apple protect pager: ", NULL)
+            debugprint_pager(applePager.addr());
             
+            memmove((char *)decryptedBuf + cryptOff - info->cryptoff, cryptbase + inPageStart, curMapLen);
 
-            return 0;
-        })) return 1;
+            munmap(cryptbase, curMapLen);
+        }
     }
 
-    void *base = (char *)oribase;
-
     if (err) {
-        //perror("mremap_encrypted(unprotect)");
-        munmap(oribase, info->cryptsize);
         return 1;
     }
 
     DLOG("copying enc pages, size: 0x%x..", info->cryptsize);
-    memcpy(dupe + info->cryptoff, base, info->cryptsize);
+    memcpy(dupe + info->cryptoff, decryptedBuf, info->cryptsize);
 
     DLOG("cleaning up...");
-    munmap(oribase, info->cryptsize);
-
+    free(decryptedBuf);
     return 0;
 }
 
@@ -359,29 +514,4 @@ decrypt_macho(const char *inputFile, const char *outputFile)
     munmap(base, base_size);
     munmap(dupe, dupe_size);
     return 0;
-}
-
-int
-main(int argc, char* argv[])
-{
-    int opt;
-    while((opt = getopt(argc, argv, "v")) != -1) {
-        switch (opt) {
-            case 'v':
-                VERBOSE = 1;
-                break;
-            default:
-                printf("optopt = %c\n", (char)optopt);
-                printf("opterr = %d\n", opterr);
-                fprintf(stderr, "usage: %s [-v] encfile outfile\n", argv[0]);
-                exit(1);
-        } 
-    }
-    argc -= optind;
-    argv += optind;
-    if (argc < 2) {
-        fprintf(stderr, "usage: fouldecrypt [-v] encfile outfile\n");
-        return 1;
-    }
-    return decrypt_macho(argv[0], argv[1]);
 }
