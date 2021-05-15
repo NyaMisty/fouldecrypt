@@ -1,3 +1,6 @@
 [submodule "kerninfra"]
 	path = kerninfra
 	url = https://github.com/NyaMisty/kerninfra
+[submodule "kernInfra"]
+	path = kernInfra
+	url = https://github.com/NyaMisty/kernInfra
