@@ -186,7 +186,7 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
 
         for (size_t off = off_aligned; off < info->cryptoff + info->cryptsize; off += PAGE_SIZE) {
             size_t off_end = MIN(off + PAGE_SIZE, info->cryptoff + info->cryptsize);
-            size_t curMapLen = (off - off_end) & (PAGE_SIZE - 1); if (!curMapLen) curMapLen = PAGE_SIZE;
+            size_t curMapLen = (off_end - off) & (PAGE_SIZE - 1); if (!curMapLen) curMapLen = PAGE_SIZE;
             char *cryptbase = (char *)__mmap("directly 16k-aligned mmap", NULL, curMapLen, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, off);
             size_t inPageStart = off < info->cryptoff ? info->cryptoff - off : 0;
             size_t inPageEnd = curMapLen;
