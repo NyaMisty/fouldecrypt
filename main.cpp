@@ -191,6 +191,7 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
             size_t inPageStart = off < info->cryptoff ? info->cryptoff - off : 0;
             size_t inPageEnd = curMapLen;
             size_t cryptOff = off + inPageStart;
+            DLOG("processing file off %lx-%lx (%p), curPage len: %lx, inPageStart: %lx, inPageEnd: %lx", off, off_end, cryptbase, curMapLen, inPageStart, inPageEnd);
 
             if (__mremap_encrypted("unprotect", cryptbase, curMapLen, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL)) {
                 munmap(cryptbase, curMapLen);
@@ -215,7 +216,8 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
             DLOG("patched mmaped vme_object apple protect pager: ", NULL)
             debugprint_pager(applePager.addr());
             
-            memmove((char *)decryptedBuf + cryptOff - info->cryptoff, cryptbase + inPageStart, curMapLen);
+            DLOG("copying %p to %p, size %lx", (char *)decryptedBuf + cryptOff - info->cryptoff, cryptbase + inPageStart, curMapLen - inPageStart);
+            memmove((char *)decryptedBuf + cryptOff - info->cryptoff, cryptbase + inPageStart, curMapLen - inPageStart);
 
             munmap(cryptbase, curMapLen);
         }
