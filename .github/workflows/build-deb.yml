@@ -2,6 +2,10 @@ name: C/C++ CI
 
 on:
   push:
+    tags:
+      - '*'
+
+  push:
     branches: [ action-test ]
 
 jobs:
@@ -33,9 +37,11 @@ jobs:
       run: |
         rm -f packages/*
         make package FINALPACKAGE=1
-    
-    - name: Upload package
-      uses: actions/upload-artifact@v2.2.0
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
       with:
-        name: 'Package'
-        path: ${{ github.workspace }}/packages/*.deb
+        files: ${{ github.workspace }}/packages/*.deb
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
