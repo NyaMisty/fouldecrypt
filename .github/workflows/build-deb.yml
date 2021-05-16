@@ -1,0 +1,41 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ action-test ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Check cache
+      id: verify-cache
+      run: |
+        echo "::set-output name=heads::`git ls-remote https://github.com/theos/theos | head -n 1 | cut -f 1`-`git ls-remote https://github.com/xybp888/iOS-SDKs | head -n 1 | cut -f 1`"
+
+    - name: Use cache
+      id: cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ github.workspace }}/theos
+        key: ${{ runner.os }}-${{ steps.verify-cache.outputs.heads }}
+
+    - name: Prepare Theos
+      uses: Randomblock1/theos-action@v1
+
+    - name: Build package
+      run: |
+        rm -f packages/*
+        make package FINALPACKAGE=1
+    
+    - name: Upload package
+      uses: actions/upload-artifact@v2.2.0
+      with:
+        name: 'Package'
+        path: ${{ github.workspace }}/packages/*.deb
