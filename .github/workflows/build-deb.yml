@@ -3,9 +3,8 @@ name: C/C++ CI
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
 
-  push:
     branches: [ action-test ]
 
 jobs:
