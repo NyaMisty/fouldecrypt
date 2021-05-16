@@ -14,9 +14,6 @@
 #include <sys/time.h>
 #include <libkern/OSByteOrder.h>
 
-
-#include <functional>
-
 #include <mach/mach.h>
 
 #include "kerninfra/kerninfra.hpp"
@@ -80,6 +77,15 @@ map(const char *path, bool _mutable, size_t *size, int *descriptor)
     return base;
 }
 
+bool has_prep_kernel = false;
+int prepare_kernel() {
+    if (!has_prep_kernel) {
+        int ret = init_kerninfra(KERNLOG_NONE);
+        if (ret) return ret;
+        has_prep_kernel = true;
+    }
+    return 0;
+}
 
 extern "C" int mremap_encrypted(void*, size_t, uint32_t, uint32_t, uint32_t);
 
@@ -107,38 +113,41 @@ int __mremap_encrypted(const char *info, void *base, size_t cryptsize, uint32_t 
     return ret;
 }
 
+#define LOGINDENT "            "
 void debugprint_vme(addr_t _vmentry) {
     auto encVmEntry = _vm_map_entry_p(_vmentry);
-    DLOG("mmaped entry: %p - %p", (void *)encVmEntry.start().load(), (void *)encVmEntry.end().load());
-    DLOG("mmaped vme_offset: 0x%llx", encVmEntry.vme_offset().load());
-    DLOG("mmaped vme_flags: 0x%x", encVmEntry.vme_flags().load());
-    DLOG("mmaped vme_object: 0x%llx", encVmEntry.vme_object().load());
+    DLOG(LOGINDENT"mmaped entry: %p - %p", (void *)encVmEntry.start().load(), (void *)encVmEntry.end().load());
+    DLOG(LOGINDENT"mmaped vme_offset: 0x%llx", encVmEntry.vme_offset().load());
+    DLOG(LOGINDENT"mmaped vme_flags: 0x%x", encVmEntry.vme_flags().load());
+    DLOG(LOGINDENT"mmaped vme_object: 0x%llx", encVmEntry.vme_object().load());
 }
 
 void debugprint_vmobj(addr_t _vmobj) {
     auto vmobj = vm_object_t_p(_vmobj);
-    DLOG("mmaped vmobj *shadow: %p **shadow: %p", (void *)vmobj.shadow().load_addr(), (void *)vmobj.shadow().shadow().load_addr());
-    DLOG("mmaped vmobj pager: %p shadow pager: %p", (void *)vmobj.pager().load_addr(), (void *)vmobj.shadow().pager().load_addr());
-    DLOG("mmaped vmobj shadow pager op: %p", (void *)vmobj.shadow().pager().mo_pager_ops().load_addr());
+    DLOG(LOGINDENT"mmaped vmobj *shadow: %p **shadow: %p", (void *)vmobj.shadow().load_addr(), (void *)vmobj.shadow().shadow().load_addr());
+    DLOG(LOGINDENT"mmaped vmobj pager: %p shadow pager: %p", (void *)vmobj.pager().load_addr(), (void *)vmobj.shadow().pager().load_addr());
+    DLOG(LOGINDENT"mmaped vmobj shadow pager op: %p", (void *)vmobj.shadow().pager().mo_pager_ops().load_addr());
 }
 
 void debugprint_pager(addr_t _pager) {
     auto applePager = apple_protect_pager_t_p(_pager);
-    DLOG("mmaped vme_object apple protect pager: ", NULL)
-    DLOG("    backingOff %llx",  applePager.backing_offset().load())
-    DLOG("    cryptoBackingOff %llx", applePager.crypto_backing_offset().load())
-    DLOG("    cryptoStart %llx", applePager.crypto_start().load())
-    DLOG("    cryptoEnd %llx", applePager.crypto_end().load())
-    DLOG("    cryptInfo %p", (void *)applePager.crypt_info().load())
+    DLOG(LOGINDENT"mmaped vme_object apple protect pager: ", NULL)
+    DLOG(LOGINDENT"    backingOff %llx",  applePager.backing_offset().load())
+    DLOG(LOGINDENT"    cryptoBackingOff %llx", applePager.crypto_backing_offset().load())
+    DLOG(LOGINDENT"    cryptoStart %llx", applePager.crypto_start().load())
+    DLOG(LOGINDENT"    cryptoEnd %llx", applePager.crypto_end().load())
+    DLOG(LOGINDENT"    cryptInfo %p", (void *)applePager.crypt_info().load())
 }
+#undef LOGINDENT
 
 static int
 unprotect(int f, uint8_t *dupe, int cpuType, int cpuSubType, struct encryption_info_command *info, size_t macho_off)
 {
+#define LOGINDENT "        "
     assert((info->cryptoff & (EXEC_PAGE_SIZE - 1)) == 0);
 
-    DLOG("Going to decrypt crypt page: off 0x%x size 0x%x cryptid %d, cpuType %x cpuSubType %x", info->cryptoff, info->cryptsize, info->cryptid, cpuType, cpuSubType);
-    getchar();
+    DLOG(LOGINDENT"Going to decrypt crypt page: off 0x%x size 0x%x cryptid %d, cpuType %x cpuSubType %x", info->cryptoff, info->cryptsize, info->cryptid, cpuType, cpuSubType);
+    //getchar();
 
     size_t off_aligned = info->cryptoff & ~(PAGE_SIZE - 1);
     //size_t size_aligned = info->cryptsize + info->cryptoff - off_aligned;
@@ -148,7 +157,7 @@ unprotect(int f, uint8_t *dupe, int cpuType, int cpuSubType, struct encryption_i
     void *decryptedBuf = malloc(info->cryptsize);
 
     if (!(info->cryptoff & (PAGE_SIZE - 1))) {
-        DLOG("Already 16k aligned, directly go ahead :)");
+        DLOG(LOGINDENT"Already 16k aligned, directly go ahead :)");
         void *cryptbase = __mmap("16k-aligned", NULL, info->cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff + macho_off);
         // old-school mremap_encrypted
         if (__mremap_encrypted("unprotect", cryptbase, info->cryptsize, info->cryptid, cpuType, cpuSubType)) {
@@ -158,23 +167,23 @@ unprotect(int f, uint8_t *dupe, int cpuType, int cpuSubType, struct encryption_i
         memmove(decryptedBuf, cryptbase, info->cryptsize);
         munmap(cryptbase, info->cryptsize);
     } else {
-        DLOG("Not 16k aligned, trying to do the hack :O");
+        DLOG(LOGINDENT"Not 16k aligned, trying to do the hack :O");
 
-        if (!!init_kerninfra()) {
+        if (!!prepare_kernel()) {
             fprintf(stderr, "Failed to init kerninfra!!\n");
             exit(1);
         } else {
-            DLOG("successfully initialized kerninfra!");
+            DLOG(LOGINDENT"successfully initialized kerninfra!");
         }
 
         for (size_t off = off_aligned; off < info->cryptoff + info->cryptsize; off += PAGE_SIZE) {
             size_t off_end = MIN(off + PAGE_SIZE, info->cryptoff + info->cryptsize);
             size_t curMapLen = (off_end - off) & (PAGE_SIZE - 1); if (!curMapLen) curMapLen = PAGE_SIZE;
-            char *cryptbase = (char *)__mmap("directly 16k-aligned mmap", NULL, curMapLen, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, off + macho_off);
             size_t inPageStart = off < info->cryptoff ? info->cryptoff - off : 0;
             size_t inPageEnd = curMapLen;
             size_t cryptOff = off + inPageStart;
-            DLOG("processing file off %lx-%lx (%p), curPage len: %lx, inPageStart: %lx, inPageEnd: %lx", off, off_end, cryptbase, curMapLen, inPageStart, inPageEnd);
+            DLOG(LOGINDENT"    processing file off %lx-%lx, curPage len: %lx, inPageStart: %lx, inPageEnd: %lx", off, off_end, curMapLen, inPageStart, inPageEnd);
+            char *cryptbase = (char *)__mmap("directly 16k-aligned mmap", NULL, curMapLen, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, off + macho_off);
 
             if (__mremap_encrypted("unprotect", cryptbase, curMapLen, info->cryptid, cpuType, cpuSubType)) {
                 munmap(cryptbase, curMapLen);
@@ -183,23 +192,23 @@ unprotect(int f, uint8_t *dupe, int cpuType, int cpuSubType, struct encryption_i
 
             auto curp = proc_t_p(current_proc());
             addr_t _encVmEntry = lookup_vm_map_entry(curp.task()._map().load_addr(), (addr_t)(cryptbase));
-            DLOG("Got mmaped entry: %p", (void*)_encVmEntry);
+            DLOG(LOGINDENT"    Got mmaped entry: %p", (void*)_encVmEntry);
             debugprint_vme(_encVmEntry);
 
             auto encVmEntry = _vm_map_entry_p(_encVmEntry);
             auto vmobj = encVmEntry.vme_object();
             debugprint_vmobj(vmobj.load_addr());
             auto applePager = apple_protect_pager_t_p(vmobj.shadow().pager().load_addr());
-            DLOG("mmaped vme_object apple protect pager: ", NULL);
+            DLOG(LOGINDENT"    mmaped vme_object apple protect pager: ", NULL);
             debugprint_pager(applePager.addr());
 
             applePager.crypto_backing_offset().store(macho_off + cryptOff);
             applePager.crypto_start().store(inPageStart);
 
-            DLOG("patched mmaped vme_object apple protect pager: ", NULL)
+            DLOG(LOGINDENT"    patched mmaped vme_object apple protect pager: ", NULL)
             debugprint_pager(applePager.addr());
             
-            DLOG("copying %p to %p, size %lx", (char *)decryptedBuf + cryptOff - info->cryptoff, cryptbase + inPageStart, curMapLen - inPageStart);
+            DLOG(LOGINDENT"    copying %p to %p, size %lx", (char *)decryptedBuf + cryptOff - info->cryptoff, cryptbase + inPageStart, curMapLen - inPageStart);
             memmove((char *)decryptedBuf + cryptOff - info->cryptoff, cryptbase + inPageStart, curMapLen - inPageStart);
 
             munmap(cryptbase, curMapLen);
@@ -210,16 +219,18 @@ unprotect(int f, uint8_t *dupe, int cpuType, int cpuSubType, struct encryption_i
         return 1;
     }
 
-    DLOG("copying enc pages, size: 0x%x..", info->cryptsize);
+    DLOG(LOGINDENT"copying enc pages, size: 0x%x..", info->cryptsize);
     memcpy(dupe + info->cryptoff, decryptedBuf, info->cryptsize);
 
-    DLOG("cleaning up...");
+    DLOG(LOGINDENT"cleaning up...");
     free(decryptedBuf);
     return 0;
+#undef LOGINDENT
 }
 
 int
 decrypt_macho_slide(int f, uint8_t *inputData, uint8_t *outputData, size_t macho_off) {
+#define LOGINDENT "    "
     uint32_t offset = 0;
     int cpuType = 0, cpuSubType = 0;
     int ncmds = 0;
@@ -237,7 +248,7 @@ decrypt_macho_slide(int f, uint8_t *inputData, uint8_t *outputData, size_t macho
         offset = sizeof(struct mach_header);
     }
 
-    DLOG("finding encryption_info segment in slide...");
+    DLOG(LOGINDENT"finding encryption_info segment in slide...");
     
     // Enumerate all load commands and check for the encryption header, if found
     // start "unprotect"'ing the contents.
@@ -247,7 +258,7 @@ decrypt_macho_slide(int f, uint8_t *inputData, uint8_t *outputData, size_t macho
         struct load_command* command = (struct load_command*) (inputData + offset);
 
         if (command->cmd == LC_ENCRYPTION_INFO || command->cmd == LC_ENCRYPTION_INFO_64) {
-            DLOG("    found encryption_info segment at offset %x", offset);
+            DLOG(LOGINDENT"    found encryption_info segment at offset %x", offset);
             encryption_info = (struct encryption_info_command*) command;
             // There should only be ONE header present anyways, so stop after
             // the first one.
@@ -258,7 +269,7 @@ decrypt_macho_slide(int f, uint8_t *inputData, uint8_t *outputData, size_t macho
         offset += command->cmdsize;
     }
     if (!encryption_info || !encryption_info->cryptid) {
-        DLOG("this slide is not encrypted!");
+        DLOG(LOGINDENT"this slide is not encrypted!");
         return 0;
     }
     
@@ -266,7 +277,7 @@ decrypt_macho_slide(int f, uint8_t *inputData, uint8_t *outputData, size_t macho
     // the loader does not attempt to decrypt decrypted pages.
     //
     
-    DLOG("decrypting encrypted data...");
+    DLOG(LOGINDENT"decrypting encrypted data...");
     if (unprotect(f, outputData, cpuType, cpuSubType, encryption_info, macho_off) == 0) {
         encryption_info = (struct encryption_info_command*) (outputData + offset);
         encryption_info->cryptid = 0;
@@ -275,6 +286,7 @@ decrypt_macho_slide(int f, uint8_t *inputData, uint8_t *outputData, size_t macho
     }
     
     return 0;
+#undef LOGINDENT
 }
 
 int
@@ -308,11 +320,12 @@ decrypt_macho(const char *inputFile, const char *outputFile)
         DLOG("handling %d fat arches...", fatInt(fat_header->nfat_arch));
         for (int fat_i = 0; fat_i < fatInt(fat_header->nfat_arch); fat_i++) {
             auto curFatArch = &fatarches[fat_i];
-            DLOG("handling fat arch %d, cpuType 0x%x, cpuSubType 0x%x, fileOff 0x%x, size 0x%x, align 0x%x", fat_i, 
+            DLOG("    handling fat arch %d, cpuType 0x%x, cpuSubType 0x%x, fileOff 0x%x, size 0x%x, align 0x%x", fat_i, 
                 fatInt(curFatArch->cputype), fatInt(curFatArch->cpusubtype), fatInt(curFatArch->offset), fatInt(curFatArch->size), fatInt(curFatArch->align));
             decrypt_macho_slide(f, base + fatInt(curFatArch->offset), dupe + fatInt(curFatArch->offset), fatInt(curFatArch->offset));
         }
     } else {
+        DLOG("    not fat binary, directly decrypting it!");
         decrypt_macho_slide(f, base, dupe, 0);
     }
 
