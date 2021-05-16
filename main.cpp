@@ -9,8 +9,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <mach-o/loader.h>
+#include <mach-o/fat.h>
 #include <time.h>
 #include <sys/time.h>
+#include <libkern/OSByteOrder.h>
+
 
 #include <functional>
 
@@ -37,69 +40,48 @@ int VERBOSE = 0;
 };
 
 
-extern "C" int mremap_encrypted(void*, size_t, uint32_t, uint32_t, uint32_t);
-/*
-static int
-unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
+static uint8_t*
+map(const char *path, bool _mutable, size_t *size, int *descriptor)
 {
-    vm_address_t offalign = info->cryptoff & ~(PAGE_SIZE - 1);
-    vm_address_t mapoffset = info->cryptoff - offalign;
-    size_t aligned_size = info->cryptsize + mapoffset;
-    size_t realsize = info->cryptsize;
-    int cryptid = info->cryptid;
-    DLOG("mapping encrypted data pages using off: 0x%lx, size: 0x%zx", offalign, aligned_size);
-    
-    void *tmp_dec_area = mmap(NULL, aligned_size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, 0, 0);
-    
-    
-    auto curp = proc_t_p(current_proc());
-    auto vPageShift = curp.task()._map().page_shift();
-    DLOG("original page shift: %d", vPageShift.load());
-    vPageShift.store(12);
-    DLOG("new page shift: %d", vPageShift.load());
-
-    //int fpid = fork();
-    int fpid = 0;
-    if (fpid < 0) {
-        perror("fork(unprotect)");
-    } else if (fpid == 0) {
-        exit(0);
-        // we are child!
-        void *oribase = mmap(NULL, aligned_size, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, offalign);
-        if (oribase == MAP_FAILED) {
-            perror("mmap(unprotect)");
-            return 1;
-        }
-
-        void *base = (char *)oribase + mapoffset;
-        DLOG("mremap_encrypted pages using addr: %p, size: 0x%lx, cryptid: %d, cputype: %x, cpusubtype: %x", 
-            base, aligned_size, cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
-        //int error = mremap_encrypted(oribase, aligned_size, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
-        int error = mremap_encrypted(base, realsize, cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL);
-        if (error) {
-            perror("mremap_encrypted(unprotect)");
-            munmap(oribase, info->cryptsize);
-            return 1;
-        }
-
-        memmove(tmp_dec_area, base, realsize);
-
-        DLOG("cleaning up...");
-        munmap(oribase, info->cryptsize);
-
-        exit(0);
-    } else {
-        vPageShift.store(14);
-        DLOG("restored page shift: %d", vPageShift.load());
-        wait(NULL);
+    int f = open(path, _mutable ? O_CREAT | O_TRUNC | O_RDWR : O_RDONLY, 0755);
+    if (f < 0) {
+        perror(_mutable ? "open(map-ro)" : "open(map-rw)");
+        return NULL;
     }
     
-    DLOG("copying child process's ret pages..");
-    //memcpy(dupe + info->cryptoff, base + (info->cryptoff - offalign), info->cryptsize);
-    memcpy(dupe + info->cryptoff, tmp_dec_area, info->cryptsize);
+    if (_mutable) {
+        if (ftruncate(f, *size) < 0) {
+            perror("ftruncate(map)");
+            return NULL;
+        }
+    }
 
-    return 0;
-}*/
+    struct stat s;
+    if (fstat(f, &s) < 0) {
+        perror("fstat(map)");
+        close(f);
+        return NULL;
+    }
+
+    uint8_t *base = (uint8_t *)mmap(NULL, s.st_size, _mutable ? PROT_READ | PROT_WRITE : PROT_READ,
+        _mutable ? MAP_SHARED : MAP_PRIVATE, f, 0);
+    if (base == MAP_FAILED) {
+        perror(_mutable ? "mmap(map-ro)" : "mmap(map-rw)");
+        close(f);
+        return NULL;
+    }
+
+    *size = s.st_size;
+    if (descriptor) {
+        *descriptor = f;
+    } else {
+        close(f);
+    }
+    return base;
+}
+
+
+extern "C" int mremap_encrypted(void*, size_t, uint32_t, uint32_t, uint32_t);
 
 extern "C" kern_return_t mach_vm_remap(vm_map_t, mach_vm_address_t *, mach_vm_size_t,
                             mach_vm_offset_t, int, vm_map_t, mach_vm_address_t,
@@ -151,11 +133,12 @@ void debugprint_pager(addr_t _pager) {
 }
 
 static int
-unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
+unprotect(int f, uint8_t *dupe, int cpuType, int cpuSubType, struct encryption_info_command *info, size_t macho_off)
 {
     assert((info->cryptoff & (EXEC_PAGE_SIZE - 1)) == 0);
 
-    DLOG("Going to decrypt crypt page: off 0x%x size 0x%x cryptid %d", info->cryptoff, info->cryptsize, info->cryptid);
+    DLOG("Going to decrypt crypt page: off 0x%x size 0x%x cryptid %d, cpuType %x cpuSubType %x", info->cryptoff, info->cryptsize, info->cryptid, cpuType, cpuSubType);
+    getchar();
 
     size_t off_aligned = info->cryptoff & ~(PAGE_SIZE - 1);
     //size_t size_aligned = info->cryptsize + info->cryptoff - off_aligned;
@@ -166,9 +149,9 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
 
     if (!(info->cryptoff & (PAGE_SIZE - 1))) {
         DLOG("Already 16k aligned, directly go ahead :)");
-        void *cryptbase = __mmap("16k-aligned", NULL, info->cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff);
+        void *cryptbase = __mmap("16k-aligned", NULL, info->cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff + macho_off);
         // old-school mremap_encrypted
-        if (__mremap_encrypted("unprotect", cryptbase, info->cryptsize, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL)) {
+        if (__mremap_encrypted("unprotect", cryptbase, info->cryptsize, info->cryptid, cpuType, cpuSubType)) {
             munmap(cryptbase, info->cryptsize);
             return 1;
         }
@@ -187,13 +170,13 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
         for (size_t off = off_aligned; off < info->cryptoff + info->cryptsize; off += PAGE_SIZE) {
             size_t off_end = MIN(off + PAGE_SIZE, info->cryptoff + info->cryptsize);
             size_t curMapLen = (off_end - off) & (PAGE_SIZE - 1); if (!curMapLen) curMapLen = PAGE_SIZE;
-            char *cryptbase = (char *)__mmap("directly 16k-aligned mmap", NULL, curMapLen, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, off);
+            char *cryptbase = (char *)__mmap("directly 16k-aligned mmap", NULL, curMapLen, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, off + macho_off);
             size_t inPageStart = off < info->cryptoff ? info->cryptoff - off : 0;
             size_t inPageEnd = curMapLen;
             size_t cryptOff = off + inPageStart;
             DLOG("processing file off %lx-%lx (%p), curPage len: %lx, inPageStart: %lx, inPageEnd: %lx", off, off_end, cryptbase, curMapLen, inPageStart, inPageEnd);
 
-            if (__mremap_encrypted("unprotect", cryptbase, curMapLen, info->cryptid, CPU_TYPE_ARM64, CPU_SUBTYPE_ARM64_ALL)) {
+            if (__mremap_encrypted("unprotect", cryptbase, curMapLen, info->cryptid, cpuType, cpuSubType)) {
                 munmap(cryptbase, curMapLen);
                 return 1;
             }
@@ -210,7 +193,7 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
             DLOG("mmaped vme_object apple protect pager: ", NULL);
             debugprint_pager(applePager.addr());
 
-            applePager.crypto_backing_offset().store(cryptOff);
+            applePager.crypto_backing_offset().store(macho_off + cryptOff);
             applePager.crypto_start().store(inPageStart);
 
             DLOG("patched mmaped vme_object apple protect pager: ", NULL)
@@ -235,44 +218,63 @@ unprotect(int f, uint8_t *dupe, struct encryption_info_command_64 *info)
     return 0;
 }
 
-static uint8_t*
-map(const char *path, bool _mutable, size_t *size, int *descriptor)
-{
-    int f = open(path, _mutable ? O_CREAT | O_TRUNC | O_RDWR : O_RDONLY, 0755);
-    if (f < 0) {
-        perror(_mutable ? "open(map-ro)" : "open(map-rw)");
-        return NULL;
+int
+decrypt_macho_slide(int f, uint8_t *inputData, uint8_t *outputData, size_t macho_off) {
+    uint32_t offset = 0;
+    int cpuType = 0, cpuSubType = 0;
+    int ncmds = 0;
+    if (*(uint32_t *)inputData == MH_MAGIC_64) { // 64bit
+        struct mach_header_64* header = (struct mach_header_64*) inputData;
+        cpuType = header->cputype;
+        cpuSubType = header->cpusubtype;
+        ncmds = header->ncmds;
+        offset = sizeof(struct mach_header_64);
+    } else if (*(uint32_t *)inputData == MH_MAGIC) { // 32bit
+        struct mach_header* header = (struct mach_header*) inputData;
+        cpuType = header->cputype;
+        cpuSubType = header->cpusubtype;
+        ncmds = header->ncmds;
+        offset = sizeof(struct mach_header);
+    }
+
+    DLOG("finding encryption_info segment in slide...");
+    
+    // Enumerate all load commands and check for the encryption header, if found
+    // start "unprotect"'ing the contents.
+
+    struct encryption_info_command *encryption_info = NULL; // for both 32bit and 64bit macho, the command layout are the same
+    for (uint32_t i = 0; i < ncmds; i++) {
+        struct load_command* command = (struct load_command*) (inputData + offset);
+
+        if (command->cmd == LC_ENCRYPTION_INFO || command->cmd == LC_ENCRYPTION_INFO_64) {
+            DLOG("    found encryption_info segment at offset %x", offset);
+            encryption_info = (struct encryption_info_command*) command;
+            // There should only be ONE header present anyways, so stop after
+            // the first one.
+            //
+            break;
+        }
+
+        offset += command->cmdsize;
+    }
+    if (!encryption_info || !encryption_info->cryptid) {
+        DLOG("this slide is not encrypted!");
+        return 0;
     }
     
-    if (_mutable) {
-        if (ftruncate(f, *size) < 0) {
-            perror("ftruncate(map)");
-            return NULL;
-        }
-    }
-
-    struct stat s;
-    if (fstat(f, &s) < 0) {
-        perror("fstat(map)");
-        close(f);
-        return NULL;
-    }
-
-    uint8_t *base = (uint8_t *)mmap(NULL, s.st_size, _mutable ? PROT_READ | PROT_WRITE : PROT_READ,
-        _mutable ? MAP_SHARED : MAP_PRIVATE, f, 0);
-    if (base == MAP_FAILED) {
-        perror(_mutable ? "mmap(map-ro)" : "mmap(map-rw)");
-        close(f);
-        return NULL;
-    }
-
-    *size = s.st_size;
-    if (descriptor) {
-        *descriptor = f;
+    // If "unprotect"'ing is successful, then change the "cryptid" so that
+    // the loader does not attempt to decrypt decrypted pages.
+    //
+    
+    DLOG("decrypting encrypted data...");
+    if (unprotect(f, outputData, cpuType, cpuSubType, encryption_info, macho_off) == 0) {
+        encryption_info = (struct encryption_info_command*) (outputData + offset);
+        encryption_info->cryptid = 0;
     } else {
-        close(f);
+        return 1;
     }
-    return base;
+    
+    return 0;
 }
 
 int
@@ -294,57 +296,24 @@ decrypt_macho(const char *inputFile, const char *outputFile)
         return 1;
     }
 
-    // If the files are not of the same size, then they are not duplicates of
-    // each other, which is an error.
-    //
-    if (base_size != dupe_size) {
-        munmap(base, base_size);
-        munmap(dupe, dupe_size);
-        return 1;
-    }
-
-    DLOG("finding encryption_info segment in file...");
-    struct mach_header_64* header = (struct mach_header_64*) base;
-    assert(header->magic == MH_MAGIC_64);
-    assert(header->cputype == CPU_TYPE_ARM64);
-    assert(header->cpusubtype == CPU_SUBTYPE_ARM64_ALL);
-
-    uint32_t offset = sizeof(struct mach_header_64);
-
-    // Enumerate all load commands and check for the encryption header, if found
-    // start "unprotect"'ing the contents.
-    //
-    struct encryption_info_command_64 *encryption_info = NULL;
-    for (uint32_t i = 0; i < header->ncmds; i++) {
-        struct load_command* command = (struct load_command*) (base + offset);
-
-        if (command->cmd == LC_ENCRYPTION_INFO_64) {
-            DLOG("    found encryption_info segment at offset %x", offset);
-            encryption_info = (struct encryption_info_command_64*) command;
-            // There should only be ONE header present anyways, so stop after
-            // the first one.
-            //
-            break;
-        }
-
-        offset += command->cmdsize;
-    }
-    if (!encryption_info || !encryption_info->cryptid) {
-        fprintf(stderr, "file not encrypted!\n");
-        exit(1);
-    }
-    // If "unprotect"'ing is successful, then change the "cryptid" so that
-    // the loader does not attempt to decrypt decrypted pages.
-    //
     DLOG("copying original data of size 0x%zx...", base_size);
     memcpy(dupe, base, base_size);
     
-    DLOG("decrypting encrypted data...");
-    if (unprotect(f, dupe, encryption_info) == 0) {
-        encryption_info = (struct encryption_info_command_64*) (dupe + offset);
-        encryption_info->cryptid = 0;
+    if (*(uint32_t *)base == FAT_CIGAM || *(uint32_t *)base == FAT_MAGIC) {
+        bool isBe = *(uint32_t *)base == FAT_CIGAM;
+        struct fat_header *fat_header = (struct fat_header *) base;
+        struct fat_arch *fatarches = (struct fat_arch *) (fat_header + 1);
+        auto fatInt = [isBe](int t) -> int {return isBe ? OSSwapInt32(t) : t;};
+        
+        DLOG("handling %d fat arches...", fatInt(fat_header->nfat_arch));
+        for (int fat_i = 0; fat_i < fatInt(fat_header->nfat_arch); fat_i++) {
+            auto curFatArch = &fatarches[fat_i];
+            DLOG("handling fat arch %d, cpuType 0x%x, cpuSubType 0x%x, fileOff 0x%x, size 0x%x, align 0x%x", fat_i, 
+                fatInt(curFatArch->cputype), fatInt(curFatArch->cpusubtype), fatInt(curFatArch->offset), fatInt(curFatArch->size), fatInt(curFatArch->align));
+            decrypt_macho_slide(f, base + fatInt(curFatArch->offset), dupe + fatInt(curFatArch->offset), fatInt(curFatArch->offset));
+        }
     } else {
-        return 1;
+        decrypt_macho_slide(f, base, dupe, 0);
     }
 
     munmap(base, base_size);

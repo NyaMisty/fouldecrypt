@@ -14,7 +14,7 @@ fouldecrypt_SUBPROJECTS = kerninfra
 fouldecrypt_LDFLAGS += -Lkerninfra/libs
 fouldecrypt_CCFLAGS += -std=c++2a
 
-flexdecrypt2_FILES = main.cpp flexwrapper.mm
+flexdecrypt2_FILES = main.cpp flexwrapper.cpp
 flexdecrypt2_CFLAGS = -fobjc-arc -Wno-unused-variable # -Ipriv_include
 flexdecrypt2_CCFLAGS = $(flexdecrypt2_CFLAGS)
 flexdecrypt2_CODESIGN_FLAGS = -Sentitlements.plist
