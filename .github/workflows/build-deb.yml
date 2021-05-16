@@ -5,7 +5,7 @@ on:
     tags:
       - 'v*'
 
-    branches: [ action-test ]
+    branches: [ master ]
 
 jobs:
   build:
