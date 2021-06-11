@@ -154,6 +154,7 @@ main(int argc, char *argv[])
         return 1;
     }
 
+
     /* Enumerate entire app bundle to find all Mach-Os. */
     targetPath = tempPath;
     NSEnumerator *enumerator = [[NSFileManager defaultManager] enumeratorAtPath:targetPath];
@@ -192,9 +193,11 @@ main(int argc, char *argv[])
         fclose(fp);
     }
 
+
     /* LSApplicationProxy: get app info */
     LSApplicationProxy *appProxy = [LSApplicationProxy applicationProxyForIdentifier:targetId];
     assert(appProxy);
+
 
     /* zip: archive */
     NSString *archiveName =
