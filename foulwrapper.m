@@ -131,6 +131,7 @@ main(int argc, char *argv[])
                 [[error localizedDescription] UTF8String]);
         return 1;
     }
+    NSLog(@"%@", targetPath);
 
 
     /* Make a copy of app bundle. */
@@ -156,12 +157,11 @@ main(int argc, char *argv[])
 
 
     /* Enumerate entire app bundle to find all Mach-Os. */
-    targetPath = tempPath;
-    NSEnumerator *enumerator = [[NSFileManager defaultManager] enumeratorAtPath:targetPath];
+    NSEnumerator *enumerator = [[NSFileManager defaultManager] enumeratorAtPath:tempPath];
     NSString *objectPath = nil;
     while (objectPath = [enumerator nextObject])
     {
-        NSString *objectFullPath = [targetPath stringByAppendingPathComponent:objectPath];
+        NSString *objectFullPath = [tempPath stringByAppendingPathComponent:objectPath];
         FILE *fp = fopen(objectFullPath.UTF8String, "rb");
         if (!fp)
         {
@@ -178,16 +178,14 @@ main(int argc, char *argv[])
 
         if (num == MH_MAGIC_64 || num == FAT_MAGIC_64)
         {
-            NSString *objectBackupPath = [objectFullPath stringByAppendingPathExtension:@"bak"];
-            BOOL didBackup =
-                [[NSFileManager defaultManager] copyItemAtPath:objectFullPath toPath:objectBackupPath error:nil];
-            assert(didBackup);
+            NSString *objectRawPath = [targetPath stringByAppendingPathComponent:objectPath];
 
             int decryptStatus =
-                my_system([[NSString stringWithFormat:@"fouldecrypt -v '%@' '%@'", escape_arg(objectBackupPath), escape_arg(
+                my_system([[NSString stringWithFormat:@"fouldecrypt -v '%@' '%@'", escape_arg(objectRawPath), escape_arg(
                     objectFullPath)] UTF8String]);
-            BOOL didClean = [[NSFileManager defaultManager] removeItemAtPath:objectBackupPath error:nil];
-            assert(didClean);
+            if (decryptStatus != 0) {
+                break;
+            }
         }
 
         fclose(fp);
