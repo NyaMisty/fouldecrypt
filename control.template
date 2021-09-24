@@ -1,8 +1,8 @@
 Package: moe.misty.fouldecrypt
 Name: fouldecrypt
-Version: 0.0.3
+Version: 0.0.4
 Architecture: iphoneos-arm
-Depends: libkrw (>= 1.0.0)
+Depends: {{.depends}}
 Description: Directly decrypt binaries like flexdecrypt, but also supports iOS 14
 Maintainer: misty
 Author: misty
