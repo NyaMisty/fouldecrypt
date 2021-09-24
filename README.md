@@ -22,6 +22,14 @@ And at the same time, foulplay independently found the same approach, and implem
 
 I recompiled the foulplay for iOS, and a wrapper `flexdecrypt2` for flexdecrypt.
 
+## How to use
+
+Install the correct version:
+- `fouldecrypt-TFP0` for < iOS 14
+- `fouldecrypt-LIBKRW` if you are running Unc0ver
+- `fouldecrypt-LIBKERNRW` if you are running Taurine
+
+Run `fouldecrypt` on an encrypted binary.
 
 ## Credits
 @meme: foulplay
