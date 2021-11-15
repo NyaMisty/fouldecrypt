@@ -164,6 +164,7 @@ unprotect(int f, uint8_t *dupe, int cpuType, int cpuSubType, struct encryption_i
             munmap(cryptbase, info->cryptsize);
             return 1;
         }
+        DLOG(LOGINDENT"    copying %p to %p, size %x", (char *)decryptedBuf, cryptbase, info->cryptsize);
         memmove(decryptedBuf, cryptbase, info->cryptsize);
         munmap(cryptbase, info->cryptsize);
     } else {
