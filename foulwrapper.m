@@ -203,7 +203,7 @@ main(int argc, char *argv[])
     NSString *archivePath =
         [[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingPathComponent:archiveName];
     BOOL didClean = [[NSFileManager defaultManager] removeItemAtPath:archivePath error:nil];
-    assert(didClean);
+    // assert(didClean);
     int zipStatus =
         my_system([[NSString stringWithFormat:@"set -e; shopt -s dotglob; cd '%@'; zip -r '%@' .; shopt -u dotglob;", escape_arg([tempURL path]), escape_arg(
             archivePath)] UTF8String]);
