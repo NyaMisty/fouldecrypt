@@ -31,6 +31,12 @@ Install the correct version:
 
 Run `fouldecrypt` on an encrypted binary.
 
+## About `foulwrapper`
+
+`foulwrapper` will find all Mach-Os in a specific application and decrypt them using `fouldecrypt`:
+
+`usage: foulwrapper (application name or bundle identifier)`
+
 ## Credits
 @meme: foulplay
 @JohnCoates: flexdecrypt
