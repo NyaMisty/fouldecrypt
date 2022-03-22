@@ -312,6 +312,7 @@ decrypt_macho(const char *inputFile, const char *outputFile)
     DLOG("copying original data of size 0x%zx...", base_size);
     memcpy(dupe, base, base_size);
     
+    int ret = 0;
     if (*(uint32_t *)base == FAT_CIGAM || *(uint32_t *)base == FAT_MAGIC) {
         bool isBe = *(uint32_t *)base == FAT_CIGAM;
         struct fat_header *fat_header = (struct fat_header *) base;
@@ -323,14 +324,17 @@ decrypt_macho(const char *inputFile, const char *outputFile)
             auto curFatArch = &fatarches[fat_i];
             DLOG("    handling fat arch %d, cpuType 0x%x, cpuSubType 0x%x, fileOff 0x%x, size 0x%x, align 0x%x", fat_i, 
                 fatInt(curFatArch->cputype), fatInt(curFatArch->cpusubtype), fatInt(curFatArch->offset), fatInt(curFatArch->size), fatInt(curFatArch->align));
-            decrypt_macho_slide(f, base + fatInt(curFatArch->offset), dupe + fatInt(curFatArch->offset), fatInt(curFatArch->offset));
+            ret = decrypt_macho_slide(f, base + fatInt(curFatArch->offset), dupe + fatInt(curFatArch->offset), fatInt(curFatArch->offset));
+            if (ret) {
+                break;
+            }
         }
     } else {
         DLOG("    not fat binary, directly decrypting it!");
-        decrypt_macho_slide(f, base, dupe, 0);
+        ret = decrypt_macho_slide(f, base, dupe, 0);
     }
 
     munmap(base, base_size);
     munmap(dupe, dupe_size);
-    return 0;
+    return ret;
 }
