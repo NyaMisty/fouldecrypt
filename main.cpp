@@ -157,8 +157,9 @@ unprotect(int f, uint8_t *dupe, int cpuType, int cpuSubType, struct encryption_i
     void *decryptedBuf = malloc(info->cryptsize);
 
     if (!(info->cryptoff & (PAGE_SIZE - 1))) {
+        ptrace(PT_TRACE_ME, 0, 0, 0);
         DLOG(LOGINDENT"Already 16k aligned, directly go ahead :)");
-        void *cryptbase = __mmap("16k-aligned", NULL, info->cryptsize, PROT_READ, MAP_PRIVATE, f, info->cryptoff + macho_off);
+        void *cryptbase = __mmap("16k-aligned", NULL, info->cryptsize, PROT_READ | PROT_EXEC, MAP_PRIVATE, f, info->cryptoff + macho_off);
         // old-school mremap_encrypted
         if (__mremap_encrypted("unprotect", cryptbase, info->cryptsize, info->cryptid, cpuType, cpuSubType)) {
             munmap(cryptbase, info->cryptsize);
