@@ -196,5 +196,7 @@ main(int argc, char *argv[])
         fclose(fp);
     }
 
+    NSLog(@"Done. Saved in %@", tempPath);
+
     return 0;
 }
