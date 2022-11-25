@@ -37,5 +37,6 @@ foulwrapper_INSTALL_PATH = /usr/local/bin
 foulwrapper_FRAMEWORKS = Foundation MobileCoreServices
 foulwrapper_PRIVATE_FRAMEWORKS = MobileContainerManager
 foulwrapper_LIBRARIES = applist
+foulwrapper_CCFLAGS += -std=c++2a
 
 include $(THEOS_MAKE_PATH)/tool.mk
