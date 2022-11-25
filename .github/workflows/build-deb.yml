@@ -37,6 +37,8 @@ jobs:
             sed -i 's/{{.depends}}/libkernrw0/g' control
             USE_LIBKERNRW=1 make package FINALPACKAGE=1
           fi
+        env:
+          DEVELOPER_DIR: ${{ secrets.DEVELOPER_DIR_12 }}
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
