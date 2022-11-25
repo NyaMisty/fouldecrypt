@@ -201,7 +201,7 @@ main(int argc, char *argv[])
 
     // create new file with content
     NSFileManager *fileX = [NSFileManager defaultManager];
-    NSString *newFilePath = [tempURL stringByAppendingPathComponent:@"decrypt.day"];
+    NSString *newFilePath = [tempPath stringByAppendingPathComponent:@"decrypt.day"];
         NSError *error;
         if ([fileX createFileAtPath:newFilePath contents:[@"und3fined" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil]){
     }
