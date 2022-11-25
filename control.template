@@ -4,7 +4,7 @@ Version: 0.0.5
 Architecture: iphoneos-arm
 Depends: applist,zip,{{.depends}}
 Description: Directly decrypt binaries like flexdecrypt, but also supports iOS 14
-Maintainer: misty
+Maintainer: und3fined
 Author: misty
 Section: System
 Tag: role::hacker
