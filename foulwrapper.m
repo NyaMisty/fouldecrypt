@@ -135,7 +135,7 @@ main(int argc, char *argv[])
                 [[error localizedDescription] UTF8String]);
         return 1;
     }
-    fprintf(stderr, "Target path: %s", [targetPath UTF8String]);
+    fprintf(stderr, "Target path: %s\n", [targetPath UTF8String]);
     NSString *outDir = [NSString stringWithUTF8String:argv[2]];
     NSURL *outURL = [NSURL fileURLWithPath:outDir
                                isDirectory:YES];    
@@ -195,13 +195,29 @@ main(int argc, char *argv[])
             if (decryptStatus != 0) {
                 break;
             }
-            fprintf(stderr, "%s: Success", [objectPath UTF8String]);
+            fprintf(stderr, "%s: Success\n", [objectPath UTF8String]);
         }
 
         fclose(fp);
     }
 
-    fprintf(stderr, "Done. Saved in %s", [tempPath UTF8String]);
+    LSApplicationProxy *appProxy = [LSApplicationProxy applicationProxyForIdentifier:targetId];
+    assert(appProxy);
 
-    return 0;
+        /* zip: archive */
+    NSString *archiveName =
+        [NSString stringWithFormat:@"%@_%@_dump.ipa", targetId, [appProxy shortVersionString]];
+
+    BOOL didClean = [[NSFileManager defaultManager] removeItemAtPath:archivePath error:nil];
+
+    int zipStatus =
+        my_system([[
+            NSString stringWithFormat:@"set -e; shopt -s dotglob; cd '%@'; zip -qrX '%@' .; shopt -u dotglob;",
+            escape_arg([tempURL path]),
+            escape_arg(archivePath)
+        ] UTF8String]);
+
+    fprintf(stderr, "Done.\n");
+
+    return zipStatus;
 }
