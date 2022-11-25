@@ -1,7 +1,7 @@
-TARGET := iphone:clang:14.5:14.0
+TARGET := iphone:clang:12.4:14.0
 ARCHS = arm64 arm64e
 DEBUG = 1
-export ADDITIONAL_CFLAGS = -DTHEOS_LEAN_AND_MEAN -fobjc-arc
+export ADDITIONAL_CFLAGS = -DTHEOS_LEAN_AND_MEAN -fobjc-arc -Ix_include
 
 include $(THEOS)/makefiles/common.mk
 
@@ -32,7 +32,7 @@ flexdecrypt2_LDFLAGS += -Lkerninfra/libs
 flexdecrypt2_CCFLAGS += -std=c++2a
 
 foulwrapper_FILES = foulwrapper.m
-foulwrapper_CFLAGS = -fobjc-arc -Wno-unused-variable -I. -Ix_include
+foulwrapper_CFLAGS = -fobjc-arc -Wno-unused-variable # -Ix_include
 foulwrapper_CCFLAGS = $(foulwrapper_CFLAGS)
 foulwrapper_CODESIGN_FLAGS = -Sentitlements.plist
 foulwrapper_INSTALL_PATH = /usr/local/bin
