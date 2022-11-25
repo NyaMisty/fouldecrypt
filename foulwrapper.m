@@ -135,14 +135,17 @@ main(int argc, char *argv[])
                 [[error localizedDescription] UTF8String]);
         return 1;
     }
-    NSLog(@"%@", targetPath);
-
+    fprintf(stdout, "Target path: %s", targetPath);
+    NSString *outDir = [NSString stringWithUTF8String:argv[2]];
+    NSURL *outURL = [NSURL fileURLWithPath:outDir
+                               isDirectory:YES];    
 
     /* Make a copy of app bundle. */
     NSURL *tempURL = [[NSFileManager defaultManager] URLForDirectory:NSItemReplacementDirectory
                                                             inDomain:NSUserDomainMask
-                                                   appropriateForURL:[NSURL fileURLWithPath:[[NSFileManager defaultManager] currentDirectoryPath]]
-                                                              create:YES error:&error];
+                                                   appropriateForURL:outURL
+                                                              create:YES
+                                                              error:&error];
     if (!tempURL)
     {
         fprintf(stderr,
@@ -190,13 +193,13 @@ main(int argc, char *argv[])
             if (decryptStatus != 0) {
                 break;
             }
-            NSLog(@"%@: Success", objectPath);
+            fprintf(stdout, "%s: Success", objectPath);
         }
 
         fclose(fp);
     }
 
-    NSLog(@"Done. Saved in %@", tempPath);
+    fprintf(stdout, "Done. Saved in %s", tempPath);
 
     return 0;
 }
