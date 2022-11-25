@@ -200,6 +200,15 @@ main(int argc, char *argv[])
     NSString *decryptSign = [tempPath stringByAppendingPathComponent:@"decrypt.day"];
     [[NSFileManager defaultManager] createFileAtPath:decryptSign contents:[@"und3fined" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil];
 
+    /* remove other files */
+    NSString *mobileContainerManager = [tempPath stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"];
+    NSString *bundleMetadata = [tempPath stringByAppendingPathComponent:@"BundleMetadata.plist"];
+    NSString *iTunesMetadata = [tempPath stringByAppendingPathComponent:@"iTunesMetadata.plist"];
+    [[NSFileManager defaultManager] removeItemAtPath:mobileContainerManager error:nil];
+    [[NSFileManager defaultManager] removeItemAtPath:bundleMetadata error:nil];
+    [[NSFileManager defaultManager] removeItemAtPath:iTunesMetadata error:nil];
+
+    
     /* zip: archive */
     NSString *archiveName =
         [NSString stringWithFormat:@"%@_%@_dump.ipa", targetId, [appProxy shortVersionString]];
@@ -207,6 +216,7 @@ main(int argc, char *argv[])
         [[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingPathComponent:archiveName];
 
     BOOL didClean = [[NSFileManager defaultManager] removeItemAtPath:archivePath error:nil];
+    fprintf("Creating %s file...\n", [archiveName UTF8String]);
 
     int zipStatus =
         my_system([[
@@ -217,7 +227,7 @@ main(int argc, char *argv[])
 
     fprintf(stderr, "Archive -> %s\n", [archiveName UTF8String]);
     fprintf(stderr, "Remove temp %s.\n", [tempURL UTF8String]);
-    [[NSFileManager defaultManager] removeItemAtPath:tempURL error:nil];
+    [[NSFileManager defaultManager] removeItemAtPath:[tempURL path] error:nil];
 
     if (zipStatus != 0) {
         fprintf(stderr, "cannot create archive: %s\n", [[error localizedDescription] UTF8String]);
