@@ -196,7 +196,12 @@ main(int argc, char *argv[])
     LSApplicationProxy *appProxy = [LSApplicationProxy applicationProxyForIdentifier:targetId];
     assert(appProxy);
 
-        /* zip: archive */
+    /* Sign the app bundle. */
+    NSString *decryptSign = [tempPath stringByAppendingPathComponent:@"decrypt.day"];
+    NSFileManager *fileSign = [NSFileManager defaultManager];
+    [fileSign createFileAtPath:decryptSign contents:[@"und3fined" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil];
+
+    /* zip: archive */
     NSString *archiveName =
         [NSString stringWithFormat:@"%@_%@_dump.ipa", targetId, [appProxy shortVersionString]];
     NSString *archivePath =
@@ -219,7 +224,6 @@ main(int argc, char *argv[])
         fprintf(stderr, "cannot create archive: %s\n", [[error localizedDescription] UTF8String]);
         return 1;
     }
-
 
     fprintf(stderr, "Done.\n");
 
