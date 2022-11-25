@@ -207,6 +207,8 @@ main(int argc, char *argv[])
         /* zip: archive */
     NSString *archiveName =
         [NSString stringWithFormat:@"%@_%@_dump.ipa", targetId, [appProxy shortVersionString]];
+    NSString *archivePath =
+        [[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingPathComponent:archiveName];
 
     BOOL didClean = [[NSFileManager defaultManager] removeItemAtPath:archivePath error:nil];
 
@@ -216,6 +218,17 @@ main(int argc, char *argv[])
             escape_arg([tempURL path]),
             escape_arg(archivePath)
         ] UTF8String]);
+
+    if (zipStatus != 0) {
+        fprintf(stderr, "cannot create archive: %s\n", [[error localizedDescription] UTF8String]);
+
+        my_system([[
+            NSString stringWithFormat:@"set -e; shopt -s dotglob; rm -rf '%@'; shopt -u dotglob;",
+            escape_arg([tempURL path])
+        ] UTF8String]);
+
+        return 1;
+    }
 
     fprintf(stderr, "Done.\n");
 
