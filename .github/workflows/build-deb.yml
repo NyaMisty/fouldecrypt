@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: self-hosted
     strategy:
       matrix:
         provider: [TFP0, LIBKRW, LIBKERNRW]
