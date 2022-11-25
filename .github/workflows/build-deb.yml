@@ -20,7 +20,8 @@ jobs:
           submodules: recursive
 
       - name: Prepare Theos
-        uses: Randomblock1/theos-action@v1
+        uses:  und3fined/theos-action@main
+
 
       - name: Build package
         run: |
