@@ -200,14 +200,14 @@ main(int argc, char *argv[])
     }
 
     // create new file with content
-    NSFileManager *fileX = [NSFileManager defaultManager];
-    NSString *newFilePath = [tempPath stringByAppendingPathComponent:@"decrypt.day"];
-        NSError *error;
-        if ([fileX createFileAtPath:newFilePath contents:[@"und3fined" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil]){
-    }
-    else{
-        NSLog(@"Create error: %@", error);
-    }       
+    // NSFileManager *fileX = [NSFileManager defaultManager];
+    // NSString *newFilePath = [tempPath stringByAppendingPathComponent:@"decrypt.day"];
+    //     NSError *error;
+    //     if ([fileX createFileAtPath:newFilePath contents:[@"und3fined" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil]){
+    // }
+    // else{
+    //     NSLog(@"Create error: %@", error);
+    // }       
 
     fprintf(stdout, "Done. Saved in %s", [tempPath UTF8String]);
 
