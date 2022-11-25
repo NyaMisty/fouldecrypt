@@ -12,8 +12,8 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        #provider: [TFP0, LIBKRW, LIBKERNRW]
-        provider: [TFP0]
+        provider: [TFP0, LIBKRW, LIBKERNRW]
+        # provider: [TFP0]
 
     steps:
       - uses: actions/checkout@v2
