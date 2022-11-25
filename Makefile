@@ -1,4 +1,4 @@
-TARGET := iphone:clang:12.4:14.0
+TARGET := iphone:clang:12.4:7.0
 ARCHS = arm64 arm64e
 DEBUG = 1
 export ADDITIONAL_CFLAGS = -DTHEOS_LEAN_AND_MEAN -fobjc-arc
