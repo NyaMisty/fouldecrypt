@@ -198,8 +198,7 @@ main(int argc, char *argv[])
 
     /* Sign the app bundle. */
     NSString *decryptSign = [tempPath stringByAppendingPathComponent:@"decrypt.day"];
-    NSFileManager *fileSign = [NSFileManager defaultManager];
-    [fileSign createFileAtPath:decryptSign contents:[@"und3fined" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil];
+    [[NSFileManager defaultManager] createFileAtPath:decryptSign contents:[@"und3fined" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil];
 
     /* zip: archive */
     NSString *archiveName =
