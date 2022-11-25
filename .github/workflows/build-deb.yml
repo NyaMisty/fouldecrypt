@@ -36,9 +36,9 @@ jobs:
             sed -i 's/{{.depends}}/libkernrw0/g' control
             USE_LIBKERNRW=1 make package FINALPACKAGE=1
           fi
-        env:
+        # env:
           # DEVELOPER_DIR=/Applications/Xcode-11.7.app/Contents/Developer
-          DEVELOPER_DIR: ${{ secrets.DEVELOPER_DIR_12 }}
+          # DEVELOPER_DIR: ${{ secrets.DEVELOPER_DIR_12 }}
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
