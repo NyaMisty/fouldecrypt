@@ -207,7 +207,6 @@ main(int argc, char *argv[])
     [[NSFileManager defaultManager] removeItemAtPath:mobileContainerManager error:nil];
     [[NSFileManager defaultManager] removeItemAtPath:bundleMetadata error:nil];
     [[NSFileManager defaultManager] removeItemAtPath:iTunesMetadata error:nil];
-
     
     /* zip: archive */
     NSString *archiveName =
