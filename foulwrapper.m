@@ -135,21 +135,16 @@ main(int argc, char *argv[])
                 [[error localizedDescription] UTF8String]);
         return 1;
     }
-    fprintf(stderr, "Target path: %s\n", [targetPath UTF8String]);
-    NSString *outDir = [NSString stringWithUTF8String:argv[2]];
-    NSURL *outURL = [NSURL fileURLWithPath:outDir
-                               isDirectory:YES];    
 
-    NSLog(@"outDir %@", outDir);
+    fprintf(stderr, "Target app -> %s\n", [targetId UTF8String]);  
 
     /* Make a copy of app bundle. */
     NSURL *tempURL = [[NSFileManager defaultManager] URLForDirectory:NSItemReplacementDirectory
                                                             inDomain:NSUserDomainMask
-                                                   appropriateForURL:outURL
+                                                   appropriateForURL:[NSURL fileURLWithPath:[[NSFileManager defaultManager] currentDirectoryPath]]
                                                               create:YES
                                                               error:&error];
-    if (!tempURL)
-    {
+    if (!tempURL) {
         fprintf(stderr,
                 "cannot create appropriate item replacement directory: %s\n",
                 [[error localizedDescription] UTF8String]);
@@ -158,12 +153,10 @@ main(int argc, char *argv[])
 
     NSString *tempPath = [[tempURL path] stringByAppendingPathComponent:@"Payload"];
     BOOL didCopy = [[NSFileManager defaultManager] copyItemAtPath:targetPath toPath:tempPath error:&error];
-    if (!didCopy)
-    {
+    if (!didCopy) {
         fprintf(stderr, "cannot copy app bundle: %s\n", [[error localizedDescription] UTF8String]);
         return 1;
     }
-
 
     /* Enumerate entire app bundle to find all Mach-Os. */
     NSEnumerator *enumerator = [[NSFileManager defaultManager] enumeratorAtPath:tempPath];
@@ -185,8 +178,7 @@ main(int argc, char *argv[])
             continue;
         }
 
-        if (num == MH_MAGIC_64 || num == FAT_MAGIC_64)
-        {
+        if (num == MH_MAGIC_64 || num == FAT_MAGIC_64) {
             NSString *objectRawPath = [targetPath stringByAppendingPathComponent:objectPath];
 
             int decryptStatus =
@@ -195,7 +187,7 @@ main(int argc, char *argv[])
             if (decryptStatus != 0) {
                 break;
             }
-            fprintf(stderr, "%s: Success\n", [objectPath UTF8String]);
+            fprintf(stderr, "[dump] %s: Success\n", [objectPath UTF8String]);
         }
 
         fclose(fp);
@@ -219,16 +211,15 @@ main(int argc, char *argv[])
             escape_arg(archivePath)
         ] UTF8String]);
 
+    fprintf(stderr, "Archive -> %s\n", [archivePath UTF8String]);
+    fprintf(stderr, "Clean %s.\n", [tempPath UTF8String]);
+    [[NSFileManager defaultManager] removeItemAtPath:tempPath error:nil];
+
     if (zipStatus != 0) {
         fprintf(stderr, "cannot create archive: %s\n", [[error localizedDescription] UTF8String]);
-
-        my_system([[
-            NSString stringWithFormat:@"set -e; shopt -s dotglob; rm -rf '%@'; shopt -u dotglob;",
-            escape_arg([tempURL path])
-        ] UTF8String]);
-
         return 1;
     }
+
 
     fprintf(stderr, "Done.\n");
 
