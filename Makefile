@@ -29,7 +29,7 @@ flexdecrypt2_LDFLAGS += -Lkerninfra/libs
 flexdecrypt2_CCFLAGS += -std=c++2a
 
 foulwrapper_FILES = foulwrapper.m
-foulwrapper_CFLAGS = -fobjc-arc -Wno-unused-variable -Ix_include
+foulwrapper_CFLAGS = -fobjc-arc -Wno-unused-variable # -Ix_include
 foulwrapper_CCFLAGS = $(foulwrapper_CFLAGS)
 foulwrapper_CODESIGN_FLAGS = -Sentitlements.plist
 foulwrapper_INSTALL_PATH = /usr/local/bin
