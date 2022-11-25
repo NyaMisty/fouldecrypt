@@ -25,6 +25,7 @@ jobs:
       - name: Build package
         run: |
           echo "SYSROOT -> $SYSROOT"
+          echo "DEVELOPER_DIR -> $DEVELOPER_DIR"
           rm -f packages/*
           cp control.template control
           if [[ ${{matrix.provider}} == TFP0 ]]; then
