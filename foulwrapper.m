@@ -192,7 +192,7 @@ main(int argc, char *argv[])
         fclose(fp);
     }
 
-    return 0
+    return 0;
 
     // /* LSApplicationProxy: get app info */
     // LSApplicationProxy *appProxy = [LSApplicationProxy applicationProxyForIdentifier:targetId];
