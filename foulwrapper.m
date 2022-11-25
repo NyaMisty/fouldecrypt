@@ -136,7 +136,7 @@ main(int argc, char *argv[])
         return 1;
     }
 
-    fprintf(stderr, "Target app -> %s\n", [targetId UTF8String]);  
+    fprintf(stderr, "[start] Target app -> %s\n", [targetId UTF8String]);  
 
     /* Make a copy of app bundle. */
     NSURL *tempURL = [[NSFileManager defaultManager] URLForDirectory:NSItemReplacementDirectory
@@ -216,7 +216,7 @@ main(int argc, char *argv[])
         [[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingPathComponent:archiveName];
 
     BOOL didClean = [[NSFileManager defaultManager] removeItemAtPath:archivePath error:nil];
-    fprintf("Creating %s file...\n", [archiveName UTF8String]);
+    fprintf(stderr, "[archive] Creating %s file...\n", [archiveName UTF8String]);
 
     int zipStatus =
         my_system([[
@@ -225,8 +225,8 @@ main(int argc, char *argv[])
             escape_arg(archivePath)
         ] UTF8String]);
 
-    fprintf(stderr, "Archive -> %s\n", [archiveName UTF8String]);
-    fprintf(stderr, "Remove temp %s.\n", [tempURL UTF8String]);
+    fprintf(stderr, "[archive] Archive -> %s\n", [archiveName UTF8String]);
+    fprintf(stderr, "[clean] Remove temp %s.\n", [tempURL path]);
     [[NSFileManager defaultManager] removeItemAtPath:[tempURL path] error:nil];
 
     if (zipStatus != 0) {
