@@ -12,7 +12,7 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        provider: [TFP0, LIBKRW, LIBKERNRW]
+        provider: [LIBKRW, LIBKERNRW]
 
     steps:
       - uses: actions/checkout@v2
@@ -26,12 +26,8 @@ jobs:
       - name: Build package
         run: |
           rm -f packages/*
-          ls -lah
           cp control.template control
-          ls -lah
-          if [[ ${{matrix.provider}} == TFP0 ]]; then
-            USE_TFP0=1 make package FINALPACKAGE=1
-          elif [[ ${{matrix.provider}} == LIBKRW ]]; then
+          if [[ ${{matrix.provider}} == LIBKRW ]]; then
             sed -i 's/{{.depends}}/libkrw/g' control
             USE_LIBKRW=1 make package FINALPACKAGE=1
           elif [[ ${{matrix.provider}} == LIBKERNRW ]]; then
