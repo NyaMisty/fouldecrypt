@@ -22,9 +22,9 @@ jobs:
       - name: Prepare Theos
         uses: Randomblock1/theos-action@v1
 
-
       - name: Build package
         run: |
+          echo "theos: $THEOS"
           rm -f packages/*
           cp control.template control
           if [[ ${{matrix.provider}} == TFP0 ]]; then
