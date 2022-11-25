@@ -24,7 +24,7 @@ jobs:
 
       - name: Build package
         run: |
-          cp -rf include/* $THEOS/include/
+          cp -rf include/* $THEOS/vendor/include/
           rm -f packages/*
           cp control.template control
           if [[ ${{matrix.provider}} == TFP0 ]]; then
