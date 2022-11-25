@@ -135,7 +135,7 @@ main(int argc, char *argv[])
                 [[error localizedDescription] UTF8String]);
         return 1;
     }
-    fprintf(stdout, "Target path: %s", targetPath);
+    fprintf(stdout, "Target path: %s", [targetPath UTF8String]);
     NSString *outDir = [NSString stringWithUTF8String:argv[2]];
     NSURL *outURL = [NSURL fileURLWithPath:outDir
                                isDirectory:YES];    
@@ -193,13 +193,23 @@ main(int argc, char *argv[])
             if (decryptStatus != 0) {
                 break;
             }
-            fprintf(stdout, "%s: Success", objectPath);
+            fprintf(stdout, "%s: Success", [objectPath UTF8String]);
         }
 
         fclose(fp);
     }
 
-    fprintf(stdout, "Done. Saved in %s", tempPath);
+    // create new file with content
+    NSFileManager *fileX = [NSFileManager defaultManager];
+    NSString *newFilePath = [tempURL stringByAppendingPathComponent:@"decrypt.day"];
+        NSError *error;
+        if ([fileX createFileAtPath:newFilePath contents:[@"und3fined" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil]){
+    }
+    else{
+        NSLog(@"Create error: %@", error);
+    }       
+
+    fprintf(stdout, "Done. Saved in %s", [tempPath UTF8String]);
 
     return 0;
 }
