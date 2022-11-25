@@ -24,7 +24,7 @@ jobs:
 
       - name: Build package
         run: |
-          echo "theos: $THEOS"
+          $THEOS/bin/update-theos
           rm -f packages/*
           cp control.template control
           if [[ ${{matrix.provider}} == TFP0 ]]; then
