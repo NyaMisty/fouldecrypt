@@ -226,8 +226,7 @@ main(int argc, char *argv[])
         ] UTF8String]);
 
     fprintf(stderr, "[archive] Archive -> %s\n", [archiveName UTF8String]);
-    NSString *tempURLString = [[tempURL path] stringByAppendingPathComponent:@"."];
-    fprintf(stderr, "[clean] Remove temp %s.\n", [tempURLString UTF8String]);
+    fprintf(stderr, "[clean] Remove temp %s.\n", [[tempURL path] UTF8String]);
     [[NSFileManager defaultManager] removeItemAtPath:[tempURL path] error:nil];
 
     if (zipStatus != 0) {
