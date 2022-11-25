@@ -235,6 +235,5 @@ main(int argc, char *argv[])
     }
 
     fprintf(stderr, "Done.\n");
-
     return zipStatus;
 }
