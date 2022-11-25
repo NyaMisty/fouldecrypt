@@ -210,14 +210,14 @@ main(int argc, char *argv[])
 
     int zipStatus =
         my_system([[
-            NSString stringWithFormat:@"set -e; shopt -s dotglob; cd '%@'; zip -qrX '%@' .; shopt -u dotglob;",
+            NSString stringWithFormat:@"set -e; shopt -s dotglob; cd '%@'; zip -qrX '%@' ./Payload; shopt -u dotglob;",
             escape_arg([tempURL path]),
             escape_arg(archivePath)
         ] UTF8String]);
 
-    fprintf(stderr, "Archive -> %s\n", [archivePath UTF8String]);
-    fprintf(stderr, "Clean %s.\n", [tempPath UTF8String]);
-    [[NSFileManager defaultManager] removeItemAtPath:tempPath error:nil];
+    fprintf(stderr, "Archive -> %s\n", [archiveName UTF8String]);
+    fprintf(stderr, "Remove temp %s.\n", [tempURL UTF8String]);
+    [[NSFileManager defaultManager] removeItemAtPath:tempURL error:nil];
 
     if (zipStatus != 0) {
         fprintf(stderr, "cannot create archive: %s\n", [[error localizedDescription] UTF8String]);
