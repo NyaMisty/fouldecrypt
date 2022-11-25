@@ -140,6 +140,8 @@ main(int argc, char *argv[])
     NSURL *outURL = [NSURL fileURLWithPath:outDir
                                isDirectory:YES];    
 
+    NSLog(@"outDir %@", outDir);
+
     /* Make a copy of app bundle. */
     NSURL *tempURL = [[NSFileManager defaultManager] URLForDirectory:NSItemReplacementDirectory
                                                             inDomain:NSUserDomainMask
