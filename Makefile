@@ -6,6 +6,8 @@ include $(THEOS)/makefiles/common.mk
 
 TOOL_NAME = fouldecrypt flexdecrypt2 foulwrapper
 
+EXTRAINCDIRS="./x_include"
+
 export USE_TFP0 = 1
 # export USE_LIBKRW = 1
 # export USE_LIBKERNRW = 1
@@ -29,7 +31,7 @@ flexdecrypt2_LDFLAGS += -Lkerninfra/libs
 flexdecrypt2_CCFLAGS += -std=c++2a
 
 foulwrapper_FILES = foulwrapper.m
-foulwrapper_CFLAGS = -fobjc-arc -Wno-unused-variable # -Ix_include
+foulwrapper_CFLAGS = -fobjc-arc -Wno-unused-variable $(patsubst %,-I%,$(EXTRAINCDIRS)) -I.
 foulwrapper_CCFLAGS = $(foulwrapper_CFLAGS)
 foulwrapper_CODESIGN_FLAGS = -Sentitlements.plist
 foulwrapper_INSTALL_PATH = /usr/local/bin
