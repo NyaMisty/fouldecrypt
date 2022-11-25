@@ -47,7 +47,11 @@ my_system(const char *ctx)
         }
         if (WIFEXITED(status))
         {
-            fprintf(stderr, "pid %d exited, status=%d\n", pid, WEXITSTATUS(status));
+            if (WEXITSTATUS(status) != 0)
+            {
+                fprintf(stderr, "pid %d, exited with status %d\n", pid, WEXITSTATUS(status));
+                return WEXITSTATUS(status);
+            }
         }
         else if (WIFSIGNALED(status))
         {
@@ -57,10 +61,10 @@ my_system(const char *ctx)
         {
             fprintf(stderr, "pid %d stopped by signal %d\n", pid, WSTOPSIG(status));
         }
-        else if (WIFCONTINUED(status))
-        {
-            fprintf(stderr, "pid %d continued\n", pid);
-        }
+        // else if (WIFCONTINUED(status))
+        // {
+        //     // fprintf(stderr, "pid %d continued\n", pid);
+        // }
     }
     while (!WIFEXITED(status) && !WIFSIGNALED(status));
     if (WIFSIGNALED(status))
@@ -186,7 +190,7 @@ main(int argc, char *argv[])
             if (decryptStatus != 0) {
                 break;
             }
-            NSLog(@"%@: Success", objectRawPath);
+            NSLog(@"%@: Success", objectPath);
         }
 
         fclose(fp);
