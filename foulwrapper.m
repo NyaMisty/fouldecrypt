@@ -193,22 +193,4 @@ main(int argc, char *argv[])
     }
 
     return 0;
-
-    // /* LSApplicationProxy: get app info */
-    // LSApplicationProxy *appProxy = [LSApplicationProxy applicationProxyForIdentifier:targetId];
-    // assert(appProxy);
-
-
-    // /* zip: archive */
-    // NSString *archiveName =
-    //     [NSString stringWithFormat:@"%@_%@_dumped.ipa", [appProxy localizedName], [appProxy shortVersionString]];
-    // NSString *archivePath =
-    //     [[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingPathComponent:archiveName];
-    // BOOL didClean = [[NSFileManager defaultManager] removeItemAtPath:archivePath error:nil];
-    // // assert(didClean);
-    // int zipStatus =
-    //     my_system([[NSString stringWithFormat:@"set -e; shopt -s dotglob; cd '%@'; zip -r '%@' .; shopt -u dotglob;", escape_arg([tempURL path]), escape_arg(
-    //         archivePath)] UTF8String]);
-
-    // return zipStatus;
 }
