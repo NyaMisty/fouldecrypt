@@ -162,7 +162,7 @@ main(int argc, char *argv[])
     NSEnumerator *enumerator = [[NSFileManager defaultManager] enumeratorAtPath:tempPath];
     NSString *objectPath = nil;
     BOOL didError = 0;
-    NSNumber decryptCount = [NSNumber numberWithInteger: 0];
+    NSNumber *decryptCount = [NSNumber numberWithInteger: 0];
     while (objectPath = [enumerator nextObject])
     {
         NSString *objectFullPath = [tempPath stringByAppendingPathComponent:objectPath];
