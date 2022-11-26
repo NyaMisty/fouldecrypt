@@ -8,7 +8,7 @@
 #import <MobileContainerManager/MCMContainer.h>
 #import <MobileCoreServices/LSApplicationProxy.h>
 
-// static int VERBOSE = 0;
+static int VERBOSE = 0;
 
 #define MH_MAGIC_64   0xfeedfacf  /* the 64-bit mach magic number */
 #define MH_CIGAM_64   0xcffaedfe  /* NXSwapInt(MH_MAGIC_64) */
@@ -201,7 +201,11 @@ main(int argc, char *argv[])
 
     if (didError) {
         return didError;
-    } else if (decryptCount == 0) {
+    }
+    
+    fprintf(stderr, "[dump] Total: %d\n", [decryptCount integerValue]);
+
+    if ([decryptCount integerValue] == 0) {
         fprintf(stderr, "[dump] no Mach-O found\n");
         return 1;
     }
