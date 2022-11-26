@@ -202,8 +202,6 @@ main(int argc, char *argv[])
     if (didError) {
         return didError;
     }
-    
-    fprintf(stderr, "[dump] Total: %s\n", [decryptCount stringValue]);
 
     if ([decryptCount integerValue] == 0) {
         fprintf(stderr, "[dump] no Mach-O found\n");
