@@ -191,18 +191,32 @@ main(int argc, char *argv[])
 
         // check suffix
         if (
-            objectFullPath.hasSuffix(@".bundle") ||
-            objectFullPath.hasSuffix(@".momd") ||
-            objectFullPath.hasSuffix(@".strings") ||
-            objectFullPath.hasSuffix(@".appex") ||
-            objectFullPath.hasSuffix(@".app") ||
-            objectFullPath.hasSuffix(@".lproj") ||
-            objectFullPath.hasSuffix(@".storyboardc") ||
+            [objectPath containsString:@"/Data/"] ||
+            [objectPath containsString:@"/Assets"] ||
+            [objectPath UTF8String].hasSuffix(@".bundle") ||
+            [objectPath UTF8String].hasSuffix(@".momd") ||
+            [objectPath UTF8String].hasSuffix(@".strings") ||
+            [objectPath UTF8String].hasSuffix(@".appex") ||
+            [objectPath UTF8String].hasSuffix(@".app") ||
+            [objectPath UTF8String].hasSuffix(@".lproj") ||
+            [objectPath UTF8String].hasSuffix(@".storyboardc") ||
+            [objectPath UTF8String].hasSuffix(@".framework") ||
+            [objectPath UTF8String].hasSuffix(@".png") ||
+            [objectPath UTF8String].hasSuffix(@".jpg") ||
+            [objectPath UTF8String].hasSuffix(@".jpeg") ||
+            [objectPath UTF8String].hasSuffix(@".png") ||
+            [objectPath UTF8String].hasSuffix(@".json") ||
+            [objectPath UTF8String].hasSuffix(@".assets") ||
+            [objectPath UTF8String].hasSuffix(@".xml") ||
+            [objectPath UTF8String].hasSuffix(@".resource") ||
+            [objectPath UTF8String].hasSuffix(@".plist") ||
+            [objectPath UTF8String].hasSuffix(@"PkgInfo") ||
+            [objectPath UTF8String].hasSuffix(@".car") ||
+            [objectPath UTF8String].hasSuffix(@".config") ||
         ) {
             fclose(fp);
             continue;
         }
-
 
         // if (num == MH_MAGIC_64 || num == MH_CIGAM_64 || num == MH_MAGIC || num == MH_CIGAM) {
         NSString *objectRawPath = [targetPath stringByAppendingPathComponent:objectPath];
