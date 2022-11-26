@@ -192,6 +192,7 @@ main(int argc, char *argv[])
         // check suffix
         if (
             [objectPath containsString:@"/Data/"] ||
+            [objectPath containsString:@"/data/"] ||
             [objectPath containsString:@"/Assets"] ||
             [objectPath containsString:@"/res/"] ||
             [objectPath containsString:@".bundle"] ||
