@@ -161,6 +161,7 @@ main(int argc, char *argv[])
     /* Enumerate entire app bundle to find all Mach-Os. */
     NSEnumerator *enumerator = [[NSFileManager defaultManager] enumeratorAtPath:tempPath];
     NSString *objectPath = nil;
+    BOOL didError = 0;
     while (objectPath = [enumerator nextObject])
     {
         NSString *objectFullPath = [tempPath stringByAppendingPathComponent:objectPath];
@@ -185,12 +186,18 @@ main(int argc, char *argv[])
                 my_system([[NSString stringWithFormat:@"fouldecrypt '%@' '%@'", escape_arg(objectRawPath), escape_arg(
                     objectFullPath)] UTF8String]);
             if (decryptStatus != 0) {
+                didError = decryptStatus;
+                fprintf(stderr, "[dump] %s: Failed\n", [objectPath UTF8String]);
                 break;
             }
             fprintf(stderr, "[dump] %s: Success\n", [objectPath UTF8String]);
         }
 
         fclose(fp);
+    }
+
+    if (didError) {
+        return didError;
     }
 
     LSApplicationProxy *appProxy = [LSApplicationProxy applicationProxyForIdentifier:targetId];
