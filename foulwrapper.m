@@ -193,6 +193,8 @@ main(int argc, char *argv[])
         if (
             [objectPath containsString:@"/Data/"] ||
             [objectPath containsString:@"/Assets"] ||
+            [objectPath containsString:@"/res/"] ||
+            [objectPath containsString:@".bundle"] ||
             [objectPath UTF8String].hasSuffix(@".bundle") ||
             [objectPath UTF8String].hasSuffix(@".momd") ||
             [objectPath UTF8String].hasSuffix(@".strings") ||
