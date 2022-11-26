@@ -162,6 +162,7 @@ main(int argc, char *argv[])
     NSEnumerator *enumerator = [[NSFileManager defaultManager] enumeratorAtPath:tempPath];
     NSString *objectPath = nil;
     BOOL didError = 0;
+    NSNumber decryptCount = [NSNumber numberWithInteger: 0];
     while (objectPath = [enumerator nextObject])
     {
         NSString *objectFullPath = [tempPath stringByAppendingPathComponent:objectPath];
@@ -190,6 +191,8 @@ main(int argc, char *argv[])
                 fprintf(stderr, "[dump] %s: Failed\n", [objectPath UTF8String]);
                 break;
             }
+
+            decryptCount = [NSNumber numberWithInteger: [decryptCount integerValue] + 1];
             fprintf(stderr, "[dump] %s: Success\n", [objectPath UTF8String]);
         }
 
@@ -198,6 +201,9 @@ main(int argc, char *argv[])
 
     if (didError) {
         return didError;
+    } else if (decryptCount == 0) {
+        fprintf(stderr, "[dump] no Mach-O found\n");
+        return 1;
     }
 
     LSApplicationProxy *appProxy = [LSApplicationProxy applicationProxyForIdentifier:targetId];
