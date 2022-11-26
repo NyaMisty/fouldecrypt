@@ -223,7 +223,16 @@ main(int argc, char *argv[])
             continue;
         }
 
-        if (num == MH_MAGIC_64 || num == MH_CIGAM_64 || num == MH_MAGIC || num == MH_CIGAM) {
+        if (
+            num == MH_MAGIC_64 ||
+            num == MH_MAGIC ||
+            num == FAT_MAGIC_64 ||
+            num == FAT_MAGIC ||
+            num == MH_CIGAM ||
+            num == MH_CIGAM_64 ||
+            num == FAT_CIGAM ||
+            num == FAT_CIGAM_64
+        ) {
             NSString *objectRawPath = [targetPath stringByAppendingPathComponent:objectPath];
 
             int decryptStatus =
