@@ -108,7 +108,7 @@ main(int argc, char *argv[])
     NSArray *sortedDisplayIdentifiers = nil;
     NSDictionary *appMaps =
         [[ALApplicationList sharedApplicationList] applicationsFilteredUsingPredicate:[NSPredicate predicateWithFormat:@"isSystemApplication = FALSE"]
-                                                                          onlyVisible:YES titleSortedIdentifiers:&sortedDisplayIdentifiers];
+                                                                          onlyVisible:NO titleSortedIdentifiers:&sortedDisplayIdentifiers];
 
     NSString *targetIdOrName = [NSString stringWithUTF8String:argv[1]];
     NSString *targetId = nil;
