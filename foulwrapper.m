@@ -10,11 +10,20 @@
 
 static int VERBOSE = 0;
 
+#define MH_MAGIC      0xfeedface
+#define MH_CIGAM      0xcefaedfe
 #define MH_MAGIC_64   0xfeedfacf  /* the 64-bit mach magic number */
 #define MH_CIGAM_64   0xcffaedfe  /* NXSwapInt(MH_MAGIC_64) */
 
+#define FAT_MAGIC     0xcafebabe
+#define FAT_CIGAM     0xbebafeca
 #define FAT_MAGIC_64  0xcafebabf
 #define FAT_CIGAM_64  0xbfbafeca  /* NXSwapLong(FAT_MAGIC_64) */
+
+#define LC_SEGMENT              0x1
+#define LC_SEGMENT_64           0x19
+#define LC_ENCRYPTION_INFO      0x21
+#define LC_ENCRYPTION_INFO_64   0x2C
 
 extern char **environ;
 
@@ -180,7 +189,7 @@ main(int argc, char *argv[])
             continue;
         }
 
-        if (num == MH_MAGIC_64 || num == FAT_MAGIC_64) {
+        if (num == MH_MAGIC_64 || num == MH_CIGAM_64 || num == MH_MAGIC || num == MH_CIGAM) {
             NSString *objectRawPath = [targetPath stringByAppendingPathComponent:objectPath];
 
             int decryptStatus =
