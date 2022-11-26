@@ -195,27 +195,27 @@ main(int argc, char *argv[])
             [objectPath containsString:@"/data/"] ||
             [objectPath containsString:@"/Assets"] ||
             [objectPath containsString:@"/res/"] ||
-            [objectPath containsString:@".bundle"] ||
-            [objectPath UTF8String].hasSuffix(@".bundle") ||
-            [objectPath UTF8String].hasSuffix(@".momd") ||
-            [objectPath UTF8String].hasSuffix(@".strings") ||
-            [objectPath UTF8String].hasSuffix(@".appex") ||
-            [objectPath UTF8String].hasSuffix(@".app") ||
-            [objectPath UTF8String].hasSuffix(@".lproj") ||
-            [objectPath UTF8String].hasSuffix(@".storyboardc") ||
-            [objectPath UTF8String].hasSuffix(@".framework") ||
-            [objectPath UTF8String].hasSuffix(@".png") ||
-            [objectPath UTF8String].hasSuffix(@".jpg") ||
-            [objectPath UTF8String].hasSuffix(@".jpeg") ||
-            [objectPath UTF8String].hasSuffix(@".png") ||
-            [objectPath UTF8String].hasSuffix(@".json") ||
-            [objectPath UTF8String].hasSuffix(@".assets") ||
-            [objectPath UTF8String].hasSuffix(@".xml") ||
-            [objectPath UTF8String].hasSuffix(@".resource") ||
-            [objectPath UTF8String].hasSuffix(@".plist") ||
-            [objectPath UTF8String].hasSuffix(@"PkgInfo") ||
-            [objectPath UTF8String].hasSuffix(@".car") ||
-            [objectPath UTF8String].hasSuffix(@".config") ||
+            [objectPath containsString:@".bundle"]
+            // [objectPath UTF8String].hasSuffix(@".bundle") ||
+            // [objectPath UTF8String].hasSuffix(@".momd") ||
+            // [objectPath UTF8String].hasSuffix(@".strings") ||
+            // [objectPath UTF8String].hasSuffix(@".appex") ||
+            // [objectPath UTF8String].hasSuffix(@".app") ||
+            // [objectPath UTF8String].hasSuffix(@".lproj") ||
+            // [objectPath UTF8String].hasSuffix(@".storyboardc") ||
+            // [objectPath UTF8String].hasSuffix(@".framework") ||
+            // [objectPath UTF8String].hasSuffix(@".png") ||
+            // [objectPath UTF8String].hasSuffix(@".jpg") ||
+            // [objectPath UTF8String].hasSuffix(@".jpeg") ||
+            // [objectPath UTF8String].hasSuffix(@".png") ||
+            // [objectPath UTF8String].hasSuffix(@".json") ||
+            // [objectPath UTF8String].hasSuffix(@".assets") ||
+            // [objectPath UTF8String].hasSuffix(@".xml") ||
+            // [objectPath UTF8String].hasSuffix(@".resource") ||
+            // [objectPath UTF8String].hasSuffix(@".plist") ||
+            // [objectPath UTF8String].hasSuffix(@"PkgInfo") ||
+            // [objectPath UTF8String].hasSuffix(@".car") ||
+            // [objectPath UTF8String].hasSuffix(@".config") ||
         ) {
             fclose(fp);
             continue;
