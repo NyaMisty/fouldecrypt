@@ -189,6 +189,21 @@ main(int argc, char *argv[])
             continue;
         }
 
+        // check suffix
+        if (
+            objectFullPath.hasSuffix(@".bundle") ||
+            objectFullPath.hasSuffix(@".momd") ||
+            objectFullPath.hasSuffix(@".strings") ||
+            objectFullPath.hasSuffix(@".appex") ||
+            objectFullPath.hasSuffix(@".app") ||
+            objectFullPath.hasSuffix(@".lproj") ||
+            objectFullPath.hasSuffix(@".storyboardc") ||
+        ) {
+            fclose(fp);
+            continue;
+        }
+
+
         // if (num == MH_MAGIC_64 || num == MH_CIGAM_64 || num == MH_MAGIC || num == MH_CIGAM) {
         NSString *objectRawPath = [targetPath stringByAppendingPathComponent:objectPath];
 
