@@ -195,7 +195,9 @@ main(int argc, char *argv[])
             [objectPath containsString:@"/data/"] ||
             [objectPath containsString:@"/Assets"] ||
             [objectPath containsString:@"/res/"] ||
-            [objectPath containsString:@".bundle"]
+            [objectPath containsString:@".bundle"] ||
+            [objectPath hasSuffix:@".lproj"] ||
+            [objectPath hasSuffix:@"PkgInfo"]
             // [objectPath UTF8String].hasSuffix(@".bundle") ||
             // [objectPath UTF8String].hasSuffix(@".momd") ||
             // [objectPath UTF8String].hasSuffix(@".strings") ||
@@ -221,21 +223,21 @@ main(int argc, char *argv[])
             continue;
         }
 
-        // if (num == MH_MAGIC_64 || num == MH_CIGAM_64 || num == MH_MAGIC || num == MH_CIGAM) {
-        NSString *objectRawPath = [targetPath stringByAppendingPathComponent:objectPath];
+        if (num == MH_MAGIC_64 || num == MH_CIGAM_64 || num == MH_MAGIC || num == MH_CIGAM) {
+            NSString *objectRawPath = [targetPath stringByAppendingPathComponent:objectPath];
 
-        int decryptStatus =
-            my_system([[NSString stringWithFormat:@"fouldecrypt '%@' '%@'", escape_arg(objectRawPath), escape_arg(
-                objectFullPath)] UTF8String]);
-        if (decryptStatus != 0) {
-            didError = decryptStatus;
-            fprintf(stderr, "[dump] %s: Failed\n", [objectPath UTF8String]);
-            break;
+            int decryptStatus =
+                my_system([[NSString stringWithFormat:@"fouldecrypt '%@' '%@'", escape_arg(objectRawPath), escape_arg(
+                    objectFullPath)] UTF8String]);
+            if (decryptStatus != 0) {
+                didError = decryptStatus;
+                fprintf(stderr, "[dump] %s: Failed\n", [objectPath UTF8String]);
+                break;
+            }
+
+            decryptCount = [NSNumber numberWithInteger: [decryptCount integerValue] + 1];
+            fprintf(stderr, "[dump] %s: Success\n", [objectPath UTF8String]);
         }
-
-        decryptCount = [NSNumber numberWithInteger: [decryptCount integerValue] + 1];
-        fprintf(stderr, "[dump] %s: Success\n", [objectPath UTF8String]);
-        // }
 
         fclose(fp);
     }
