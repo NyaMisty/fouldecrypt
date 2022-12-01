@@ -121,6 +121,10 @@ main(int argc, char *argv[])
         }
     }
 
+    if (!targetId) {
+        targetId = [NSString stringWithUTF8String:argv[2]]
+    }
+
     if (!targetId)
     {
         fprintf(stderr, "application \"%s\" not found\n", argv[1]);
