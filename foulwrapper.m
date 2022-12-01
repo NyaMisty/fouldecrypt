@@ -2,7 +2,7 @@
 #import <spawn.h>
 #import <objc/runtime.h>
 
-// #import <AppList/AppList.h>
+#import <AppList/AppList.h>
 #import <Foundation/Foundation.h>
 
 #import <MobileContainerManager/MCMContainer.h>
