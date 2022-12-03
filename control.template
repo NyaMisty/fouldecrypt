@@ -2,7 +2,7 @@ Package: moe.misty.fouldecrypt
 Name: fouldecrypt
 Version: 0.0.5
 Architecture: iphoneos-arm
-Depends: zip,{{.depends}}
+Depends: applist,zip,{{.depends}}
 Description: Directly decrypt binaries like flexdecrypt, but also supports iOS 14
 Maintainer: und3fined
 Author: misty

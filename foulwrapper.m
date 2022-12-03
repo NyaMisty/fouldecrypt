@@ -2,7 +2,7 @@
 #import <spawn.h>
 #import <objc/runtime.h>
 
-// #import <AppList/AppList.h>
+#import <AppList/AppList.h>
 #import <Foundation/Foundation.h>
 
 #import <MobileContainerManager/MCMContainer.h>
@@ -105,21 +105,21 @@ main(int argc, char *argv[])
 
     /* AppList: convert app name to app identifier */
     /* or, you can use APIs in `LSApplicationWorkspace`. */
-    // NSArray *sortedDisplayIdentifiers = nil;
-    // NSDictionary *appMaps =
-    //     [[ALApplicationList sharedApplicationList] applicationsFilteredUsingPredicate:[NSPredicate predicateWithFormat:@"isSystemApplication = FALSE"]
-    //                                                                       onlyVisible:NO titleSortedIdentifiers:&sortedDisplayIdentifiers];
+    NSArray *sortedDisplayIdentifiers = nil;
+    NSDictionary *appMaps =
+        [[ALApplicationList sharedApplicationList] applicationsFilteredUsingPredicate:[NSPredicate predicateWithFormat:@"isSystemApplication = FALSE"]
+                                                                          onlyVisible:NO titleSortedIdentifiers:&sortedDisplayIdentifiers];
 
-    // NSString *targetIdOrName = [NSString stringWithUTF8String:argv[1]];
+    NSString *targetIdOrName = [NSString stringWithUTF8String:argv[1]];
     NSString *targetId = nil;
-    // for (NSString *appId in appMaps)
-    // {
-    //     if ([appId isEqualToString:targetIdOrName] || [appMaps[appId] isEqualToString:targetIdOrName])
-    //     {
-    //         targetId = appId;
-    //         break;
-    //     }
-    // }
+    for (NSString *appId in appMaps)
+    {
+        if ([appId isEqualToString:targetIdOrName] || [appMaps[appId] isEqualToString:targetIdOrName])
+        {
+            targetId = appId;
+            break;
+        }
+    }
 
     if (!targetId) {
         targetId = [NSString stringWithUTF8String:argv[2]];
@@ -130,6 +130,11 @@ main(int argc, char *argv[])
         fprintf(stderr, "application \"%s\" not found\n", argv[1]);
         return 1;
     }
+
+
+    fprintf(stderr, "target: %s\n", [targetId UTF8String]);
+
+    return 1;
 
 
     /* MobileContainerManager: locate app bundle container path */
@@ -202,26 +207,6 @@ main(int argc, char *argv[])
             [objectPath containsString:@".bundle"] ||
             [objectPath hasSuffix:@".lproj"] ||
             [objectPath hasSuffix:@"PkgInfo"]
-            // [objectPath UTF8String].hasSuffix(@".bundle") ||
-            // [objectPath UTF8String].hasSuffix(@".momd") ||
-            // [objectPath UTF8String].hasSuffix(@".strings") ||
-            // [objectPath UTF8String].hasSuffix(@".appex") ||
-            // [objectPath UTF8String].hasSuffix(@".app") ||
-            // [objectPath UTF8String].hasSuffix(@".lproj") ||
-            // [objectPath UTF8String].hasSuffix(@".storyboardc") ||
-            // [objectPath UTF8String].hasSuffix(@".framework") ||
-            // [objectPath UTF8String].hasSuffix(@".png") ||
-            // [objectPath UTF8String].hasSuffix(@".jpg") ||
-            // [objectPath UTF8String].hasSuffix(@".jpeg") ||
-            // [objectPath UTF8String].hasSuffix(@".png") ||
-            // [objectPath UTF8String].hasSuffix(@".json") ||
-            // [objectPath UTF8String].hasSuffix(@".assets") ||
-            // [objectPath UTF8String].hasSuffix(@".xml") ||
-            // [objectPath UTF8String].hasSuffix(@".resource") ||
-            // [objectPath UTF8String].hasSuffix(@".plist") ||
-            // [objectPath UTF8String].hasSuffix(@"PkgInfo") ||
-            // [objectPath UTF8String].hasSuffix(@".car") ||
-            // [objectPath UTF8String].hasSuffix(@".config") ||
         ) {
             fclose(fp);
             continue;
