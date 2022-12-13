@@ -198,19 +198,19 @@ main(int argc, char *argv[])
             continue;
         }
 
-        // check suffix
-        if (
-            [objectPath containsString:@"/Data/"] ||
-            [objectPath containsString:@"/data/"] ||
-            [objectPath containsString:@"/Assets"] ||
-            [objectPath containsString:@"/res/"] ||
-            [objectPath containsString:@".bundle"] ||
-            [objectPath hasSuffix:@".lproj"] ||
-            [objectPath hasSuffix:@"PkgInfo"]
-        ) {
-            fclose(fp);
-            continue;
-        }
+        // // check suffix
+        // if (
+        //     [objectPath containsString:@"/Data/"] ||
+        //     [objectPath containsString:@"/data/"] ||
+        //     [objectPath containsString:@"/Assets"] ||
+        //     [objectPath containsString:@"/res/"] ||
+        //     [objectPath containsString:@".bundle"] ||
+        //     [objectPath hasSuffix:@".lproj"] ||
+        //     [objectPath hasSuffix:@"PkgInfo"]
+        // ) {
+        //     fclose(fp);
+        //     continue;
+        // }
 
         if (
             num == MH_MAGIC_64 ||
