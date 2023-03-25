@@ -134,9 +134,6 @@ main(int argc, char *argv[])
 
     fprintf(stderr, "target: %s\n", [targetId UTF8String]);
 
-    return 1;
-
-
     /* MobileContainerManager: locate app bundle container path */
     /* `LSApplicationProxy` cannot provide correct values of container URLs since iOS 12. */
     NSError *error = nil;
@@ -197,20 +194,6 @@ main(int argc, char *argv[])
             fclose(fp);
             continue;
         }
-
-        // // check suffix
-        // if (
-        //     [objectPath containsString:@"/Data/"] ||
-        //     [objectPath containsString:@"/data/"] ||
-        //     [objectPath containsString:@"/Assets"] ||
-        //     [objectPath containsString:@"/res/"] ||
-        //     [objectPath containsString:@".bundle"] ||
-        //     [objectPath hasSuffix:@".lproj"] ||
-        //     [objectPath hasSuffix:@"PkgInfo"]
-        // ) {
-        //     fclose(fp);
-        //     continue;
-        // }
 
         if (
             [objectPath containsString:@".app/Info.plist"]
