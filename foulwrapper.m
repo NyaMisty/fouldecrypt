@@ -217,13 +217,13 @@ main(int argc, char *argv[])
         ) {
             fclose(fp);
 
-            fprintf(stderr, "[change] Start remove UISupportedDevices: %s \n", [objectPath UTF8String]);
+            fprintf(stderr, "[change] Start remove UISupportedDevices -> %s \n", [objectPath UTF8String]);
 
-            NSMutableDictionary *infoPlist = [NSMutableDictionary dictionaryWithContentsOfFile:objectPath];
+            NSMutableDictionary *infoPlist = [NSMutableDictionary dictionaryWithContentsOfFile:objectFullPath];
             [infoPlist removeObjectForKey:@"UISupportedDevices"];
             [infoPlist writeToFile:objectPath atomically:YES];
 
-            fprintf(stderr, "[change] Done UISupportedDevices\n", [objectPath UTF8String]);
+            fprintf(stderr, "[change] Done UISupportedDevices\n");
 
             continue;
         }
