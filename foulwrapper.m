@@ -256,6 +256,14 @@ main(int argc, char *argv[])
     NSString *decryptSign = [tempPath stringByAppendingPathComponent:@"decrypt.day"];
     [[NSFileManager defaultManager] createFileAtPath:decryptSign contents:[@"und3fined" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil];
 
+    NSString *infoPlistPath = [tempPath stringByAppendingPathComponent:@"Info.plist"];
+    NSMutableDictionary *infoPlist = [NSMutableDictionary dictionaryWithContentsOfFile:infoPlistPath];
+    assert(infoPlist);
+
+    /* Remove UISupportedDevices in Info.plist file */
+    [infoPlist removeObjectForKey:@"UISupportedDevices"];
+    [infoPlist writeToFile:infoPlistPath atomically:YES];
+
     /* remove other files */
     NSString *mobileContainerManager = [tempPath stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"];
     NSString *bundleMetadata = [tempPath stringByAppendingPathComponent:@"BundleMetadata.plist"];
