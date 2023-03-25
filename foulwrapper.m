@@ -219,7 +219,7 @@ main(int argc, char *argv[])
 
             NSMutableDictionary *infoPlist = [NSMutableDictionary dictionaryWithContentsOfFile:objectPath];
             [infoPlist removeObjectForKey:@"UISupportedDevices"];
-            [infoPlist writeToFile:infoPlistPath atomically:YES];
+            [infoPlist writeToFile:objectPath atomically:YES];
 
             fprintf(stderr, "[change] Remove UISupportedDevices: %s Success\n", [objectPath UTF8String]);
 
