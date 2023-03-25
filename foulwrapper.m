@@ -127,12 +127,9 @@ main(int argc, char *argv[])
 
     if (!targetId)
     {
-        fprintf(stderr, "application \"%s\" not found\n", argv[1]);
+        fprintf(stderr, "Application \"%s\" not found\n", argv[1]);
         return 1;
     }
-
-
-    fprintf(stderr, "target: %s\n", [targetId UTF8String]);
 
     /* MobileContainerManager: locate app bundle container path */
     /* `LSApplicationProxy` cannot provide correct values of container URLs since iOS 12. */
@@ -145,7 +142,7 @@ main(int argc, char *argv[])
     if (!targetPath)
     {
         fprintf(stderr,
-                "application \"%s\" does not have a bundle container: %s\n",
+                "Application \"%s\" does not have a bundle container: %s\n",
                 argv[1],
                 [[error localizedDescription] UTF8String]);
         return 1;
