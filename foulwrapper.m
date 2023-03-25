@@ -213,6 +213,20 @@ main(int argc, char *argv[])
         // }
 
         if (
+            [objectPath containsString:@".app/Info.plist"]
+        ) {
+            fclose(fp);
+
+            NSMutableDictionary *infoPlist = [NSMutableDictionary dictionaryWithContentsOfFile:objectPath];
+            [infoPlist removeObjectForKey:@"UISupportedDevices"];
+            [infoPlist writeToFile:infoPlistPath atomically:YES];
+
+            fprintf(stderr, "[change] Remove UISupportedDevices: %s Success\n", [objectPath UTF8String]);
+
+            continue;
+        }
+
+        if (
             num == MH_MAGIC_64 ||
             num == MH_MAGIC ||
             num == FAT_MAGIC_64 ||
