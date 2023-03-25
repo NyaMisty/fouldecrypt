@@ -217,11 +217,13 @@ main(int argc, char *argv[])
         ) {
             fclose(fp);
 
+            fprintf(stderr, "[change] Start remove UISupportedDevices: %s \n", [objectPath UTF8String]);
+
             NSMutableDictionary *infoPlist = [NSMutableDictionary dictionaryWithContentsOfFile:objectPath];
             [infoPlist removeObjectForKey:@"UISupportedDevices"];
             [infoPlist writeToFile:objectPath atomically:YES];
 
-            fprintf(stderr, "[change] Remove UISupportedDevices: %s Success\n", [objectPath UTF8String]);
+            fprintf(stderr, "[change] Done UISupportedDevices\n", [objectPath UTF8String]);
 
             continue;
         }
@@ -270,13 +272,13 @@ main(int argc, char *argv[])
     NSString *decryptSign = [tempPath stringByAppendingPathComponent:@"decrypt.day"];
     [[NSFileManager defaultManager] createFileAtPath:decryptSign contents:[@"und3fined" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil];
 
-    NSString *infoPlistPath = [tempPath stringByAppendingPathComponent:@"Info.plist"];
-    NSMutableDictionary *infoPlist = [NSMutableDictionary dictionaryWithContentsOfFile:infoPlistPath];
-    assert(infoPlist);
+    // NSString *infoPlistPath = [tempPath stringByAppendingPathComponent:@"Info.plist"];
+    // NSMutableDictionary *infoPlist = [NSMutableDictionary dictionaryWithContentsOfFile:infoPlistPath];
+    // assert(infoPlist);
 
-    /* Remove UISupportedDevices in Info.plist file */
-    [infoPlist removeObjectForKey:@"UISupportedDevices"];
-    [infoPlist writeToFile:infoPlistPath atomically:YES];
+    // /* Remove UISupportedDevices in Info.plist file */
+    // [infoPlist removeObjectForKey:@"UISupportedDevices"];
+    // [infoPlist writeToFile:infoPlistPath atomically:YES];
 
     /* remove other files */
     NSString *mobileContainerManager = [tempPath stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"];
