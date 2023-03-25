@@ -196,15 +196,10 @@ main(int argc, char *argv[])
             [objectPath containsString:@".app/Info.plist"]
         ) {
             fclose(fp);
-
-            fprintf(stderr, "[change] Start remove UISupportedDevices -> %s \n", [objectPath UTF8String]);
-
+            fprintf(stderr, "[change] %s: Remove UISupportedDevices\n", [objectPath UTF8String]);
             NSMutableDictionary *infoPlist = [NSMutableDictionary dictionaryWithContentsOfFile:objectFullPath];
             [infoPlist removeObjectForKey:@"UISupportedDevices"];
             [infoPlist writeToFile:objectPath atomically:YES];
-
-            fprintf(stderr, "[change] Done UISupportedDevices\n");
-
             continue;
         }
 
