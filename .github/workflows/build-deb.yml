@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         # provider: [TFP0, LIBKRW, LIBKERNRW]
-        provider: [LIBKRW]
+        provider: [LIBKRW, LIBKERNRW]
 
     steps:
       - uses: actions/checkout@v2
