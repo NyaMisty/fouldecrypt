@@ -7,8 +7,8 @@ include $(THEOS)/makefiles/common.mk
 TOOL_NAME = fouldecrypt flexdecrypt2 foulwrapper
 
 # export USE_TFP0 = 1
-export USE_LIBKRW = 1
-export USE_LIBKERNRW = 1
+# export USE_LIBKRW = 1
+# export USE_LIBKERNRW = 1
 
 fouldecrypt_FILES = main.cpp foulmain.cpp
 fouldecrypt_CFLAGS = -fobjc-arc -Wno-unused-variable # -Ipriv_include
