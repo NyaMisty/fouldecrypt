@@ -36,7 +36,7 @@ jobs:
             USE_LIBKRW=1 make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           elif [[ ${{matrix.provider}} == LIBKERNRW ]]; then
             sed -i 's/{{.depends}}/libkernrw0/g' control
-            USE_LIBKERNRW=1 make package FINALPACKAGE=1
+            USE_LIBKERNRW=1 make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           fi
         # env:
           # DEVELOPER_DIR=/Applications/Xcode-11.7.app/Contents/Developer
