@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         # provider: [TFP0, LIBKRW, LIBKERNRW]
-        provider: [TFP0, LIBKERNRW]
+        provider: [LIBKRW]
 
     steps:
       - uses: actions/checkout@v2
@@ -33,7 +33,7 @@ jobs:
             USE_TFP0=1 make package FINALPACKAGE=1
           elif [[ ${{matrix.provider}} == LIBKRW ]]; then
             sed -i 's/{{.depends}}/libkrw/g' control
-            USE_LIBKRW=1 make package FINALPACKAGE=1
+            USE_LIBKRW=1 make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           elif [[ ${{matrix.provider}} == LIBKERNRW ]]; then
             sed -i 's/{{.depends}}/libkernrw0/g' control
             USE_LIBKERNRW=1 make package FINALPACKAGE=1
