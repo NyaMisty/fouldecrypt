@@ -3,8 +3,10 @@ packages
 other's proj
 priv_include
 CMakeLists.txt
-.idea/
-cmake-build-*/
+compile_commands.json
+/.idea/
+/.cache/
+/cmake-build-*/
 
 ### macOS ###
 # General
@@ -34,4 +36,3 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-
