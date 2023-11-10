@@ -9,11 +9,10 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: macos-latest
     strategy:
       matrix:
-        # provider: [TFP0, LIBKRW, LIBKERNRW]
-        provider: [TFP0, LIBKRW, LIBKERNRW]
+        provider: [LIBKRW] #[TFP0, LIBKRW, LIBKERNRW]
 
     steps:
       - uses: actions/checkout@v2
@@ -21,7 +20,7 @@ jobs:
           submodules: recursive
 
       - name: Prepare Theos
-        uses: und3fined/theos-action@main # Randomblock1/theos-action@v1
+        uses: Randomblock1/theos-action@v1
 
       - name: Build package
         run: |
@@ -29,18 +28,15 @@ jobs:
           rm -f packages/*
           cp control.template control
           if [[ ${{matrix.provider}} == TFP0 ]]; then
-            sed -i 's/,{{.depends}}//g' control
+            sed -i'' -e 's/,{{.depends}}//g' control
             USE_TFP0=1 make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           elif [[ ${{matrix.provider}} == LIBKRW ]]; then
-            sed -i 's/{{.depends}}/libkrw/g' control
+            sed -i'' -e 's/{{.depends}}/libkrw/g' control
             USE_LIBKRW=1 make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           elif [[ ${{matrix.provider}} == LIBKERNRW ]]; then
-            sed -i 's/{{.depends}}/libkernrw0/g' control
+            sed -i'' -e 's/{{.depends}}/libkernrw0/g' control
             USE_LIBKERNRW=1 make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           fi
-        # env:
-          # DEVELOPER_DIR=/Applications/Xcode-11.7.app/Contents/Developer
-          # DEVELOPER_DIR: ${{ secrets.DEVELOPER_DIR_12 }}
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
