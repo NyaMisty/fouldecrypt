@@ -2,11 +2,11 @@
 #import <spawn.h>
 #import <objc/runtime.h>
 
-#import <AppList/AppList.h>
 #import <Foundation/Foundation.h>
 
 #import <MobileContainerManager/MCMContainer.h>
 #import <MobileCoreServices/LSApplicationProxy.h>
+#import <MobileCoreServices/LSApplicationWorkspace.h>
 
 static int VERBOSE = 0;
 
@@ -27,17 +27,54 @@ static int VERBOSE = 0;
 
 extern char **environ;
 
+static NSString *shared_shell_path(void)
+{
+    static NSString *_sharedShellPath = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{ @autoreleasepool {
+        NSArray <NSString *> *possibleShells = @[
+            @"/usr/bin/bash",
+            @"/bin/bash",
+            @"/usr/bin/sh",
+            @"/bin/sh",
+            @"/usr/bin/zsh",
+            @"/bin/zsh",
+            @"/var/jb/usr/bin/bash",
+            @"/var/jb/bin/bash",
+            @"/var/jb/usr/bin/sh",
+            @"/var/jb/bin/sh",
+            @"/var/jb/usr/bin/zsh",
+            @"/var/jb/bin/zsh",
+        ];
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        for (NSString *shellPath in possibleShells) {
+            // check if the shell exists and is regular file (not symbolic link) and executable
+            NSDictionary <NSFileAttributeKey, id> *shellAttrs = [fileManager attributesOfItemAtPath:shellPath error:nil];
+            if ([shellAttrs[NSFileType] isEqualToString:NSFileTypeSymbolicLink]) {
+                continue;
+            }
+            if (![fileManager isExecutableFileAtPath:shellPath]) {
+                continue;
+            }
+            _sharedShellPath = shellPath;
+            break;
+        }
+    } });
+    return _sharedShellPath;
+}
+
 int
 my_system(const char *ctx)
 {
+    const char *shell_path = [shared_shell_path() UTF8String];
     const char *args[] = {
-        "/bin/sh",
+        shell_path,
         "-c",
         ctx,
         NULL
     };
     pid_t pid;
-    int posix_status = posix_spawn(&pid, "/bin/sh", NULL, NULL, (char **) args, environ);
+    int posix_status = posix_spawn(&pid, shell_path, NULL, NULL, (char **) args, environ);
     if (posix_status != 0)
     {
         errno = posix_status;
@@ -102,13 +139,16 @@ main(int argc, char *argv[])
         return 1;
     }
 
-
-    /* AppList: convert app name to app identifier */
-    /* or, you can use APIs in `LSApplicationWorkspace`. */
-    NSArray *sortedDisplayIdentifiers = nil;
-    NSDictionary *appMaps =
-        [[ALApplicationList sharedApplicationList] applicationsFilteredUsingPredicate:[NSPredicate predicateWithFormat:@"isSystemApplication = FALSE"]
-                                                                          onlyVisible:NO titleSortedIdentifiers:&sortedDisplayIdentifiers];
+    /* Use APIs in `LSApplicationWorkspace`. */
+    NSMutableDictionary *appMaps = [NSMutableDictionary dictionary];
+    LSApplicationWorkspace *workspace = [LSApplicationWorkspace defaultWorkspace];
+    for (LSApplicationProxy *appProxy in [workspace allApplications]) {
+        NSString *appId = [appProxy applicationIdentifier];
+        NSString *appName = [appProxy localizedName];
+        if (appId && appName) {
+            appMaps[appId] = appName;
+        }
+    }
 
     NSString *targetIdOrName = [NSString stringWithUTF8String:argv[1]];
     NSString *targetId = nil;
