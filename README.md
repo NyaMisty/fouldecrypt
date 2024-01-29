@@ -40,3 +40,5 @@ Run `fouldecrypt` on an encrypted binary.
 ## Credits
 @meme: foulplay
 @JohnCoates: flexdecrypt
+
+BUILDDDD
